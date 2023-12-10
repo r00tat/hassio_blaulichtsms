@@ -16,8 +16,9 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
+from homeassistant.components.binary_sensor import BinarySensorEntity
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import aiohttp
 import json
 
@@ -92,7 +93,11 @@ async def setup_blaulichtsms(hass: HomeAssistant, config: ConfigEntry, async_add
     coordinator = BlaulichtSMSCoordinator(hass, blaulichtsms)
 
     await coordinator.async_config_entry_first_refresh()
-    entities = [BlaulichtSMSEntity(coordinator, blaulichtsms, hass, attribute) for attribute in SENSOR_FIELDS]
+    entities = [
+        BlaulichtSMSEntity(coordinator, blaulichtsms, hass, attribute) for attribute in SENSOR_FIELDS
+    ] + [
+        BlaulichtSMSAlarmActiveSensor(coordinator, blaulichtsms, hass, config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION))
+    ]
     async_add_entities(
         entities
     )
@@ -211,6 +216,49 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
             extra_attributes['latitude'] = self.coordinator.data.get('coordinates', {}).get('lat')
             extra_attributes['longitude'] = self.coordinator.data.get('coordinates', {}).get('lon')
         self._attr_extra_state_attributes = extra_attributes
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return DeviceInfo(
+            identifiers={
+                # Serial numbers are unique identifiers within a specific domain
+                (DOMAIN, self.blaulichtsms.customer_id)
+            },
+            name=f"BlaulichtSMS {self.blaulichtsms.customer_id}",
+            manufacturer="BlaulichtSMS",
+            model="API",
+            sw_version=VERSION,
+            # via_device=(DOMAIN, self.api.bridgeid),
+        )
+
+
+class BlaulichtSMSAlarmActiveSensor(CoordinatorEntity, BinarySensorEntity):
+    def __init__(self, coordinator: BlaulichtSMSCoordinator, blaulichtsms: BlaulichtSmsController, hass: HomeAssistant, alarm_duration: int) -> None:
+        self._alarm_duration = alarm_duration
+        super().__init__(coordinator, context="alarm-active")
+        self.blaulichtsms = blaulichtsms
+        self.hass = hass
+        self.coordinator = coordinator
+        self._attr_name = f"BlaulichtSMS Alarm Active"
+        self._attr_unique_id = f"blsms-{blaulichtsms.customer_id}-alarm-active"
+        self._attr_is_on = False
+
+        if self.coordinator.data:
+            self.update_state_from_coordinator()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        if self.coordinator.data:
+            self.update_state_from_coordinator()
+        self.async_write_ha_state()
+
+    def update_state_from_coordinator(self):
+        """parse state from coordinator"""
+        new_value = self.coordinator.data.get("alarmDate")
+        alarm_date = datetime.fromisoformat(new_value)
+        self._attr_is_on = datetime.now(alarm_date.tzinfo) < alarm_date + timedelta(seconds=self._alarm_duration)
 
     @property
     def device_info(self) -> DeviceInfo:

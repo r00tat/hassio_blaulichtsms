@@ -26,4 +26,4 @@ Setup your environment and start a test container by running `./dev.sh`.
 
 This software is not affiliated with Blaulicht SMS and has been created and maintained by @r00tat.
 
-The software is licensed under [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/).
+The software is licensed under [Apache License 2.0](/LICENSE).

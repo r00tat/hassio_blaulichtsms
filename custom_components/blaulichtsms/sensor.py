@@ -24,7 +24,8 @@ import json
 
 from .blaulichtsms import BlaulichtSmsController
 from .constants import (DOMAIN, CONF_CUSTOMER_ID, CONF_USERNAME, CONF_PASSWORD, CONF_ALARM_DURATION,
-                        CONF_SHOW_INFOS, DEFAULT_ALARM_DURATION, DEFAULT_SHOW_INFOS, VERSION)
+                        CONF_SHOW_INFOS, DEFAULT_ALARM_DURATION, DEFAULT_SHOW_INFOS, VERSION,
+                        CONF_TRACK_RECIPIENT)
 from .schema import BLAULICHTSMS_SCHEMA
 
 
@@ -94,10 +95,14 @@ async def setup_blaulichtsms(hass: HomeAssistant, config: ConfigEntry, async_add
 
     await coordinator.async_config_entry_first_refresh()
     entities = [
-        BlaulichtSMSEntity(coordinator, blaulichtsms, hass, attribute) for attribute in SENSOR_FIELDS
+        BlaulichtSMSEntity(coordinator, blaulichtsms, hass, attribute, config) for attribute in SENSOR_FIELDS
     ] + [
-        BlaulichtSMSAlarmActiveSensor(coordinator, blaulichtsms, hass, config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION))
-    ]
+        BlaulichtSMSAlarmActiveSensor(coordinator, blaulichtsms, hass, config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION)),
+
+    ] + ([
+        BlaulichtSMSEntity(coordinator, blaulichtsms, hass, CONF_TRACK_RECIPIENT, config)
+    ] if config.data.get(CONF_TRACK_RECIPIENT) else [
+    ])
     async_add_entities(
         entities
     )
@@ -160,7 +165,7 @@ class BlaulichtSMSCoordinator(DataUpdateCoordinator):
 
 
 class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
-    def __init__(self, coordinator: BlaulichtSMSCoordinator, blaulichtsms: BlaulichtSmsController, hass: HomeAssistant, attribute: str) -> None:
+    def __init__(self, coordinator: BlaulichtSMSCoordinator, blaulichtsms: BlaulichtSmsController, hass: HomeAssistant, attribute: str, config: ConfigEntry) -> None:
         super().__init__(coordinator, context=attribute)
         self.blaulichtsms = blaulichtsms
         self.hass = hass
@@ -174,6 +179,8 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
         self._is_date = self.attribute.lower().endswith("date")
         if self._is_date:
             self._attr_device_class = SensorDeviceClass.TIMESTAMP
+
+        self._config = config
 
         if self.coordinator.data:
             self.update_state_from_coordinator()
@@ -202,6 +209,15 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
         elif self.attribute == "alarmGroups":
             self._attr_native_value = ", ".join([g.get('groupName', '') for g in new_value])
             self._attr_extra_state_attributes = new_value
+        elif self.attribute == CONF_TRACK_RECIPIENT:
+            recipient_number: str = self._config.data.get(CONF_TRACK_RECIPIENT)
+            recipients: list[dict] = self.coordinator.data.get("recipients")
+            found_receipient = next(x for x in recipients if x.get('msisdn') == recipient_number)
+            if not found_receipient:
+                self._attr_native_value = "unknown"
+            else:
+                self._attr_native_value = found_receipient.get("participation", "unknown")
+
         else:
             self._attr_native_value = new_value
         if self.attribute == "alarmText":

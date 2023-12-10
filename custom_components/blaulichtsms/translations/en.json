@@ -3,19 +3,37 @@
   "config": {
     "step": {
       "user": {
-        "title": "SMS setup",
+        "title": "Blaulicht SMS Setup",
         "description": "Configure your BlaulichtSMS dashboard credentials",
         "data": {
           "customer_id": "Customer ID",
           "username": "Username",
           "password": "Password",
           "alarm_duration": "Alarm duration to show as active (seconds)",
-          "show_infos": "Display infos as alarm"
+          "show_infos": "Display infos as alarm",
+          "track_recipient": "Phone number of recepient to track"
         }
       }
     },
     "abort": {
       "already_configured": "Customer is already configured"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Blaulicht SMS Setup",
+        "description": "Configure your BlaulichtSMS dashboard credentials",
+        "data": {
+          "customer_id": "Customer ID",
+          "username": "Username",
+          "password": "Password",
+          "alarm_duration": "Alarm duration to show as active (seconds)",
+          "show_infos": "Display infos as alarm",
+          "track_recipient": "Phone number of recepient to track"
+        }
+      }
+    },
+    "abort": {}
   }
 }

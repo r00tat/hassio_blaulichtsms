@@ -3,10 +3,13 @@ import json
 from typing import Dict, Any
 
 from homeassistant import config_entries
+from homeassistant.core import callback
+from homeassistant import data_entry_flow
+
 import voluptuous as vol
 
 from .constants import DOMAIN, CONF_CUSTOMER_ID
-from .schema import BLAULICHTSMS_SCHEMA
+from .schema import BLAULICHTSMS_SCHEMA, options_schema
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,4 +36,32 @@ class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(BLAULICHTSMS_SCHEMA)
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        _LOGGER.info("get options flow")
+        return OptionsFlowHandler(config_entry)
+
+
+class OptionsFlowHandler(config_entries.OptionsFlow):
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> data_entry_flow.FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            self.hass.config_entries.async_update_entry(
+                self.config_entry, data=self.config_entry.data | user_input
+            )
+            return self.async_create_entry(title="", data={})
+        return self.async_show_form(
+            step_id="init",
+            data_schema=options_schema(self.config_entry.data)
         )

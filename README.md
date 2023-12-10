@@ -5,6 +5,7 @@
 [![License][license-shield]](LICENSE)
 
 ![Project Maintenance][maintenance-shield]
+[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
 
 Diese Homeassistant Komponente ermöglicht es Alarme und Infos von [Blaulicht SMS](https://blaulichtsms.net/) abzurufen und diese Informationen anzuzeigen. Damit können bei einer Alarmierung Automatisierungen gestartet werden oÄ.
 

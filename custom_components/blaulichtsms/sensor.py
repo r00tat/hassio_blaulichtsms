@@ -2,6 +2,7 @@ from homeassistant.helpers.sensor import DeviceInfo
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers import device_registry as dr
 # from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -18,6 +19,7 @@ from homeassistant.components.sensor import (
 
 from datetime import datetime
 import aiohttp
+import json
 
 from .blaulichtsms import BlaulichtSmsController
 from .constants import (DOMAIN, CONF_CUSTOMER_ID, CONF_USERNAME, CONF_PASSWORD, CONF_ALARM_DURATION,
@@ -55,15 +57,29 @@ SENSOR_FIELDS = [
 ]
 
 
-async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback, discovery_info=None):
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback, discovery_info=None
+) -> bool:
+    """setup a config entry"""
+    _LOGGER.info("setup entry: %s", json.dumps(entry.as_dict()))
+    setup_result = await setup_blaulichtsms(hass, entry, async_add_entities, discovery_info)
+    _LOGGER.info("setup result %s", setup_result)
+    return setup_result
+
+
+async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback, discovery_info=None) -> bool:
     """Set up platform."""
     # Code for setting up your platform inside of the event loop.
+    return await setup_blaulichtsms(hass, config, async_add_entities, discovery_info)
+
+
+async def setup_blaulichtsms(hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback, discovery_info=None) -> bool:
     blaulichtsms = BlaulichtSmsController(
-        config[CONF_CUSTOMER_ID],
-        config[CONF_USERNAME],
-        config[CONF_PASSWORD],
-        config.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION),
-        config.get(CONF_SHOW_INFOS, DEFAULT_SHOW_INFOS),
+        config.data[CONF_CUSTOMER_ID],
+        config.data[CONF_USERNAME],
+        config.data[CONF_PASSWORD],
+        config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION),
+        config.data.get(CONF_SHOW_INFOS, DEFAULT_SHOW_INFOS),
     )
     # Fetch initial data so we have data when entities subscribe
     #
@@ -76,9 +92,31 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, async_a
     coordinator = BlaulichtSMSCoordinator(hass, blaulichtsms)
 
     await coordinator.async_config_entry_first_refresh()
+    entities = [BlaulichtSMSEntity(coordinator, blaulichtsms, hass, attribute) for attribute in SENSOR_FIELDS]
     async_add_entities(
-        BlaulichtSMSEntity(coordinator, blaulichtsms, hass, attribute) for attribute in SENSOR_FIELDS
+        entities
     )
+
+    # create matching device
+    # Inside a component
+    if hasattr(config, 'entry_id') and config.entry_id:
+        device_registry = dr.async_get(hass)
+
+        # does not work, config.entry_id is empty...
+        device_registry.async_get_or_create(
+            config_entry_id=config.entry_id,
+            # suggested_area="Kitchen",
+            identifiers={
+                # Serial numbers are unique identifiers within a specific domain
+                (DOMAIN, blaulichtsms.customer_id)
+            },
+            name=f"BlaulichtSMS {blaulichtsms.customer_id}",
+            manufacturer="BlaulichtSMS",
+            model="API",
+            sw_version="1.0.0",
+        )
+
+    return True
 
 
 class BlaulichtSMSCoordinator(DataUpdateCoordinator):
@@ -179,7 +217,7 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
                 # Serial numbers are unique identifiers within a specific domain
                 (DOMAIN, self.blaulichtsms.customer_id)
             },
-            name=self.name,
+            name=f"BlaulichtSMS {self.blaulichtsms.customer_id}",
             manufacturer="BlaulichtSMS",
             model="API",
             sw_version="1.0.0",

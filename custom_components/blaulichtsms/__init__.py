@@ -23,6 +23,7 @@ async def async_setup_entry(hass, entry):
     # config = hass.data[DOMAIN].get(host)
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(
-            entry.data, "sensor"
+            entry, "sensor"
         )
     )
+    return True

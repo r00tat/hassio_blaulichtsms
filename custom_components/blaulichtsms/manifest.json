@@ -3,10 +3,10 @@
   "name": "BlaulichtSMS Einsatz Infos",
   "documentation": "",
   "dependencies": [],
-  "requirements": ["aiohttp", "aiodns"],
+  "requirements": ["aiohttp", "aiodns", "async-timeout"],
   "config_flow": true,
   "iot_class": "cloud_polling",
   "integration_type": "device",
   "codeowners": ["@r00tat"],
-  "version": "0.0.1"
+  "version": "0.1.0"
 }

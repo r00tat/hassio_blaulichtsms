@@ -23,7 +23,7 @@ import json
 
 from .blaulichtsms import BlaulichtSmsController
 from .constants import (DOMAIN, CONF_CUSTOMER_ID, CONF_USERNAME, CONF_PASSWORD, CONF_ALARM_DURATION,
-                        CONF_SHOW_INFOS, DEFAULT_ALARM_DURATION, DEFAULT_SHOW_INFOS)
+                        CONF_SHOW_INFOS, DEFAULT_ALARM_DURATION, DEFAULT_SHOW_INFOS, VERSION)
 from .schema import BLAULICHTSMS_SCHEMA
 
 
@@ -113,7 +113,7 @@ async def setup_blaulichtsms(hass: HomeAssistant, config: ConfigEntry, async_add
             name=f"BlaulichtSMS {blaulichtsms.customer_id}",
             manufacturer="BlaulichtSMS",
             model="API",
-            sw_version="1.0.0",
+            sw_version=VERSION,
         )
 
     return True
@@ -194,6 +194,9 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
             self._attr_native_value = datetime.fromisoformat(new_value)
         elif self.attribute == "alarmText":
             self._attr_native_value = f"{new_value}".replace("/", " / ")
+        elif self.attribute == "alarmGroups":
+            self._attr_native_value = ", ".join([g.get('groupName', '') for g in new_value])
+            self._attr_extra_state_attributes = new_value
         else:
             self._attr_native_value = new_value
         if self.attribute == "alarmText":
@@ -220,6 +223,6 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
             name=f"BlaulichtSMS {self.blaulichtsms.customer_id}",
             manufacturer="BlaulichtSMS",
             model="API",
-            sw_version="1.0.0",
+            sw_version=VERSION,
             # via_device=(DOMAIN, self.api.bridgeid),
         )

@@ -1,0 +1,9 @@
+*.pyc
+__pycache__
+.vscode/settings.json
+/bin
+pyvenv.cfg
+/lib
+/include
+/env.sh
+/config

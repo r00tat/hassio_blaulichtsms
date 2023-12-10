@@ -1,5 +1,11 @@
 # BlaulichtSMS Homeassistant Component
 
+[![GitHub Release][releases-shield]][releases]
+[![GitHub Activity][commits-shield]][commits]
+[![License][license-shield]](LICENSE)
+
+![Project Maintenance][maintenance-shield]
+
 Diese Homeassistant Komponente ermöglicht es Alarme und Infos von [Blaulicht SMS](https://blaulichtsms.net/) abzurufen und diese Informationen anzuzeigen. Damit können bei einer Alarmierung Automatisierungen gestartet werden oÄ.
 
 Für die Konfiguration muss ein [Einsatzmonitor](https://start.blaulichtsms.net/de/#/alarm-dashboard/list) konfiguriert werden und dessen Zugangsdaten in der Integration konfiguriert werden.

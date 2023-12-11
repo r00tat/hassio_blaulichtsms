@@ -30,6 +30,10 @@ jobs:
 
       - name: "Test"
         run: python3 -m unittest discover -v
+        env: # Or as an environment variable
+          BLAULICHTSMS_CUSTOMERID: "${{ secrets.BLAULICHTSMS_CUSTOMERID }}"
+          BLAULICHTSMS_USERNAME: "${{ secrets.BLAULICHTSMS_USERNAME }}"
+          BLAULICHTSMS_PASSWORD: "${{ secrets.BLAULICHTSMS_PASSWORD }}"
 
       # - name: "Adjust version number"
       #   shell: "bash"

@@ -3,8 +3,10 @@ import json
 from typing import Dict, Any
 
 from homeassistant import config_entries
-from homeassistant.core import callback
+from homeassistant.core import callback, HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant import data_entry_flow
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 import voluptuous as vol
 
@@ -14,9 +16,9 @@ from .schema import BLAULICHTSMS_SCHEMA, options_schema
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_devices: AddEntitiesCallback):
     """Set up entry."""
-    _LOGGER.info("async setup entry %s", json.dumps(config_entry))
+    _LOGGER.debug("async setup entry %s", config_entry.data.get(CONF_CUSTOMER_ID))
 
 
 @config_entries.HANDLERS.register(DOMAIN)
@@ -28,7 +30,7 @@ class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, info: Dict[str, Any] = None):
         self.hass.data.setdefault(DOMAIN, {})
-        _LOGGER.info("%s step user started, info: %s", DOMAIN, json.dumps(info))
+        _LOGGER.debug("%s step user started, info: %s", DOMAIN, json.dumps(info))
         if info is not None:
             await self.async_set_unique_id(info[CONF_CUSTOMER_ID])
             self._abort_if_unique_id_configured()
@@ -43,7 +45,7 @@ class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
-        _LOGGER.info("get options flow")
+        _LOGGER.debug("get options flow")
         return OptionsFlowHandler(config_entry)
 
 

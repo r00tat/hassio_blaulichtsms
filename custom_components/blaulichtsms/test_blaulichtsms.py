@@ -13,9 +13,9 @@ log = logging.getLogger('TestBlaulichtSMS')
 class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
     """test blaulichtsms api"""
 
-    def asyncTearDown(self) -> Coroutine[Any, Any, None]:
-        asyncio.sleep(0)
-        return super().asyncTearDown()
+    async def asyncTearDown(self) -> Coroutine[Any, Any, None]:
+        await asyncio.sleep(0)
+        return await super().asyncTearDown()
 
     async def test_auth(self):
         log.info("tesing auth")

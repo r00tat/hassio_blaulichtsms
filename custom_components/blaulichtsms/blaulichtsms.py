@@ -36,7 +36,7 @@ class BlaulichtSmsController:
         :return: The session token
         """
         try:
-            self.logger.info("Initializing blaulichtSMS session...")
+            self.logger.debug("Initializing blaulichtSMS session...")
             content = {
                 "customerId": self.customer_id,
                 "username": self.username,
@@ -50,7 +50,7 @@ class BlaulichtSmsController:
                     # response = requests.post(self.base_url + "login", json=content)
                     # session_id = response.json()["sessionId"]
                     if session_id:
-                        self.logger.info("Successfully initialized blaulichtSMS session")
+                        self.logger.debug("Successfully initialized blaulichtSMS session")
                     else:
                         self.logger.warning("Failed to initialize blaulichtSMS session")
                     return session_id
@@ -64,11 +64,11 @@ class BlaulichtSmsController:
             self._session_token = await self.get_session()
 
         try:
-            self.logger.info("Requesting blaulichtSMS alarms...")
+            self.logger.debug("Requesting blaulichtSMS alarms...")
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.base_url + self._session_token) as resp:
                     # response = requests.get(self.base_url + self._session_token)
-                    self.logger.info("Request successful")
+                    self.logger.debug("Request successful")
                     response_json = await resp.json()
                     self.logger.debug("Response body: \n" + pformat(response_json))
                     alarms = response_json.get("alarms", [])
@@ -103,7 +103,7 @@ class BlaulichtSmsController:
 
         :return: True if there is any active alarm, False otherwise
         """
-        self.logger.info("Checking for new alarms...")
+        self.logger.debug("Checking for new alarms...")
         alarms = await self.get_alarms()
         if not alarms:
             return False
@@ -112,7 +112,7 @@ class BlaulichtSmsController:
             self.logger.debug("Alarm " + str(alarm["alarmId"]) + " on " + str(alarm_datetime))
             if alarm_datetime >= datetime.utcnow() - self.alarm_duration:
                 self.logger.debug("Alarm " + str(alarm["alarmId"]) + " is active")
-                self.logger.info("There is an active alarm")
+                self.logger.debug("There is an active alarm")
                 return True
-        self.logger.info("No active alarm found")
+        self.logger.debug("No active alarm found")
         return False

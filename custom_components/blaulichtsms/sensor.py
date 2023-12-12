@@ -63,9 +63,9 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback, discovery_info=None
 ) -> bool:
     """setup a config entry"""
-    _LOGGER.info("setup entry: %s", json.dumps(entry.as_dict()))
+    _LOGGER.info("setup of blaulichtsms entry: %s", entry.data.get(CONF_CUSTOMER_ID))
     setup_result = await setup_blaulichtsms(hass, entry, async_add_entities, discovery_info)
-    _LOGGER.info("setup result %s", setup_result)
+    _LOGGER.debug("setup result %s", setup_result)
     return setup_result
 
 
@@ -158,7 +158,7 @@ class BlaulichtSMSCoordinator(DataUpdateCoordinator):
                 # Note: using context is not required if there is no need or ability to limit
                 # data retrieved from API.
                 # listening_idx = set(self.async_contexts())
-                _LOGGER.info("fetching last alarm")
+                _LOGGER.debug("fetching last alarm")
                 return await self.api.get_last_alarm()
         except aiohttp.ClientError as err:
             raise UpdateFailed(f"Error communicating with API: {err}")
@@ -199,7 +199,7 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
     def update_state_from_coordinator(self):
         """parse state from coordinator"""
         new_value = self.coordinator.data.get(self.attribute)
-        _LOGGER.info("coordinator update for %s: %s", self.attribute, new_value)
+        _LOGGER.debug("coordinator update for %s: %s", self.attribute, new_value)
         if self.attribute == "recipients":
             self._attr_native_value = len(list(filter(lambda r: (r.get("participation") == 'yes'), new_value)))
         elif self._is_date:

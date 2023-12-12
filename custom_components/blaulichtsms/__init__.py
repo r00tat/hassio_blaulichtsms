@@ -2,7 +2,7 @@
 import logging
 
 from .constants import DOMAIN, CONF_CUSTOMER_ID
-from homeassistant.core import callback, HomeAssistant
+from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,8 +24,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # host = entry.data['host']
     # config = hass.data[DOMAIN].get(host)
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(
-            entry, "sensor"
-        )
+        hass.config_entries.async_forward_entry_setup(entry, "sensor")
+    )
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
     )
     return True

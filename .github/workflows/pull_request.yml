@@ -26,7 +26,7 @@ jobs:
         run: python3 -m pip install -r requirements.txt
 
       - name: "Lint"
-        run: python3 -m autopep8 --recursive --diff custom_components
+        run: python3 -m ruff check
 
       - name: "Test"
         run: python3 -m unittest discover -v

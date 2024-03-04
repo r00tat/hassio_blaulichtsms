@@ -3,4 +3,4 @@ aiohttp~=3.9.3
 homeassistant~=2023.12.1
 async-timeout~=4.0.3
 # autopep8~=2.0.4
-ruff~=0.2.1
+ruff~=0.3.0

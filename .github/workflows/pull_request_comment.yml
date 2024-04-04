@@ -1,15 +1,15 @@
-name: 'Pull Request'
+name: 'Pull Request Pipeline Trigger'
 
 on:
-  pull_request:
-    branches:
-      - main
+  issue_comment:
+    types: [created]
 
 permissions: {}
 
 jobs:
   pull_request:
     name: 'Lint and Test'
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '/pipeline') && github.event.comment.author_association == 'OWNER' }}
     runs-on: 'ubuntu-latest'
     permissions:
       contents: write
@@ -31,24 +31,7 @@ jobs:
 
       - name: 'Test'
         run: python3 -m unittest discover -v
-        env: # Or as an environment variable
+        env:
           BLAULICHTSMS_CUSTOMERID: '${{ secrets.BLAULICHTSMS_CUSTOMERID }}'
           BLAULICHTSMS_USERNAME: '${{ secrets.BLAULICHTSMS_USERNAME }}'
           BLAULICHTSMS_PASSWORD: '${{ secrets.BLAULICHTSMS_PASSWORD }}'
-
-      # - name: "Adjust version number"
-      #   shell: "bash"
-      #   run: |
-      #     yq -i -o json '.version="${{ github.event.release.tag_name }}"' \
-      #       "${{ github.workspace }}/custom_components/blaulichtsms/manifest.json"
-
-      # - name: "ZIP the integration directory"
-      #   shell: "bash"
-      #   run: |
-      #     cd "${{ github.workspace }}/custom_components/blaulichtsms"
-      #     zip hassio_blaulichtsms.zip -r ./
-
-      # - name: "Upload the ZIP file to the release"
-      #   uses: softprops/action-gh-release@v0.1.15
-      #   with:
-      #     files: ${{ github.workspace }}/custom_components/blaulichtsms/hassio_blaulichtsms.zip

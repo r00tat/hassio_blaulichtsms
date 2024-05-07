@@ -1,4 +1,5 @@
 """BlaulichtSMS API."""
+import json
 import logging
 from datetime import datetime, timedelta
 from pprint import pformat
@@ -6,7 +7,7 @@ from pprint import pformat
 import aiohttp
 
 
-class BlaulichtSmsSessionInitException(Exception):
+class BlaulichtSmsSessionInitException(aiohttp.ClientError):
     """Exception for Session Init."""
 
     pass
@@ -60,10 +61,10 @@ class BlaulichtSmsController:
                 # session_id = response.json()["sessionId"]
                 if session_id:
                     self.logger.debug("Successfully initialized blaulichtSMS session")
-                else:
-                    self.logger.warning("Failed to initialize blaulichtSMS session")
-                return session_id
-        except aiohttp.ClientError() as e:
+                    return session_id
+                
+                raise BlaulichtSmsSessionInitException("Failed to initialize blaulichtSMS session %s", json.dumps(json_body))
+        except aiohttp.ClientError as e:
             self.logger.error("http request failed %s", e)
             raise e
 

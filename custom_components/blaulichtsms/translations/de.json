@@ -16,7 +16,8 @@
       }
     },
     "abort": {
-      "already_configured": "Customer ist bereits konfiguriert"
+      "already_configured": "Customer ist bereits konfiguriert",
+      "blsms_auth_failed": "Authentifizierung fehlgeschlagen"
     }
   },
   "options": {

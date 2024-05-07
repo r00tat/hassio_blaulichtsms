@@ -16,7 +16,8 @@
       }
     },
     "abort": {
-      "already_configured": "Customer is already configured"
+      "already_configured": "Customer is already configured",
+      "blsms_auth_failed": "Authentication failed"
     }
   },
   "options": {

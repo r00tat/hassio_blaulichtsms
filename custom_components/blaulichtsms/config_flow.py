@@ -1,4 +1,6 @@
 """BlaulichtSMS config flow."""
+
+import aiohttp
 import logging
 import json
 from typing import Any
@@ -11,8 +13,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 import voluptuous as vol
 
-from .constants import DOMAIN, CONF_CUSTOMER_ID
+from .constants import DOMAIN, CONF_CUSTOMER_ID, CONF_USERNAME, CONF_PASSWORD
 from .schema import BLAULICHTSMS_SCHEMA, options_schema
+from .blaulichtsms import BlaulichtSmsController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +44,21 @@ class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if info is not None:
             await self.async_set_unique_id(info[CONF_CUSTOMER_ID])
             self._abort_if_unique_id_configured()
+            try:
+                blsms = BlaulichtSmsController(
+                    info[CONF_CUSTOMER_ID], info[CONF_USERNAME], info[CONF_PASSWORD]
+                )
+                alarm = await blsms.get_last_alarm()
+                _LOGGER.info(
+                    "Connected to blaulichtsms with %s and %s",
+                    info[CONF_CUSTOMER_ID],
+                    info[CONF_USERNAME],
+                )
+                _LOGGER.info("Last alarm: %s", alarm)
+            except aiohttp.ClientError as e:
+                _LOGGER.exception("failed to setup blaulichtsms: %s", e)
+                return self.async_abort(reason="blsms_auth_failed")
+
             return self.async_create_entry(
                 title=f"BlaulichtSMS {info[CONF_CUSTOMER_ID]}", data=info
             )

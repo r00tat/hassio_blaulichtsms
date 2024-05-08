@@ -1,4 +1,5 @@
 """blaulichtsms sensors."""
+
 import logging
 from datetime import datetime
 
@@ -9,6 +10,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.sensor import DeviceInfo
@@ -85,6 +87,14 @@ async def setup_blaulichtsms(
 ) -> bool:
     """Set up blaulichtsms."""
     coordinator = await BlaulichtSMSCoordinator.get_coordinator(hass, config)
+
+    try:
+        await coordinator.async_refresh()
+    except Exception as ex:
+        _LOGGER.exception("BlaulichtSMS failed to start")
+        raise PlatformNotReady(
+            f"Failed to connect to Blaulicht SMS {config.data.get(CONF_CUSTOMER_ID)}: {ex}"
+        ) from ex
 
     entities = [
         BlaulichtSMSEntity(coordinator, hass, attribute, config)

@@ -1,4 +1,5 @@
 """BlaulichtSMS coordinator."""
+
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
@@ -68,7 +69,7 @@ class BlaulichtSMSCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("fetching last alarm")
                 return await self.api.get_last_alarm()
         except aiohttp.ClientError as err:
-            raise UpdateFailed(f"Error communicating with API: {err}")
+            raise UpdateFailed(f"Error communicating with API: {err}") from err
 
     @staticmethod
     async def get_coordinator(hass: HomeAssistant, config: ConfigEntry):

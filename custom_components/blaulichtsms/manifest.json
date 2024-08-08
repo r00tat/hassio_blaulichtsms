@@ -3,10 +3,10 @@
   "name": "BlaulichtSMS Einsatz Infos",
   "documentation": "https://github.com/r00tat/hassio_blaulichtsms",
   "dependencies": [],
-  "requirements": ["aiohttp~=3.9.3", "aiodns~=3.2.0", "async-timeout~=4.0.3"],
+  "requirements": ["aiohttp>=3.9.3", "aiodns>=3.2.0", "async-timeout>=4.0.3"],
   "config_flow": true,
   "iot_class": "cloud_polling",
   "integration_type": "device",
   "codeowners": ["@r00tat"],
-  "version": "0.3.3"
+  "version": "0.3.4"
 }

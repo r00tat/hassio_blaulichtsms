@@ -7,3 +7,4 @@ pyvenv.cfg
 /include
 /env.sh
 /config
+.lock

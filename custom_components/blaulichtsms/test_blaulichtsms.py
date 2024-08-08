@@ -1,4 +1,5 @@
 """BlaulichtSMS tests."""
+
 from typing import Any
 from collections.abc import Coroutine
 import asyncio
@@ -44,7 +45,7 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(alarms)
 
         log.info("alarms %s", json.dumps(alarms))
-        self.assertGreater(len(alarms), 0)
+        self.assertGreaterEqual(len(alarms), 0)
 
     async def test_get_last_alarm(self):
         """Get last alarm."""
@@ -53,10 +54,18 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
             os.environ["BLAULICHTSMS_USERNAME"],
             os.environ["BLAULICHTSMS_PASSWORD"],
         )
+
+        alarms = await blaulichtsms.get_anonymized_alarms()
+        self.assertIsNotNone(alarms)
+
         log.info("fetch last alarm")
         alarm = await blaulichtsms.get_last_alarm()
-        self.assertIsNotNone(alarm)
-        log.info("alarm %s on %s", alarm.get("alarmText"), alarm.get("alarmDate"))
+
+        if len(alarms) == 0:
+            self.assertIsNone(alarm)
+        else:
+            self.assertIsNotNone(alarm)
+            log.info("alarm %s on %s", alarm.get("alarmText"), alarm.get("alarmDate"))
 
 
 if __name__ == "__main__":

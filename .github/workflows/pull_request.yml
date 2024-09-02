@@ -1,4 +1,4 @@
-name: 'Pull Request'
+name: "Pull Request"
 
 on:
   pull_request:
@@ -9,32 +9,41 @@ permissions: {}
 
 jobs:
   pull_request:
-    name: 'Lint and Test'
-    runs-on: 'ubuntu-latest'
+    name: "Lint and Test"
+    runs-on: "ubuntu-latest"
     permissions:
       contents: write
     steps:
-      - name: 'Checkout the repository'
-        uses: 'actions/checkout@v4.1.7'
+      - name: "Checkout the repository"
+        uses: "actions/checkout@v4.1.7"
 
-      - name: 'Set up Python'
+      - name: "Set up Python"
         uses: actions/setup-python@v5.2.0
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
-      - name: 'Install requirements'
-        run: python3 -m pip install -r requirements.txt
+      - name: "Install requirements"
+        run: |
+          python3 -m pip install uv && 
+          uv venv &&
+          source .venv/bin/activate &&
+          uv pip install -r requirements.txt
 
-      - name: 'Lint'
-        run: python3 -m ruff check
+      - name: "Lint"
+        run: |
+          source .venv/bin/activate &&
+          python3 -m ruff check
 
-      - name: 'Test'
-        run: python3 -m unittest discover -v
+      - name: "Test"
+        run: |
+          source .venv/bin/activate &&
+          python3 -m unittest discover -v
         env: # Or as an environment variable
-          BLAULICHTSMS_CUSTOMERID: '${{ secrets.BLAULICHTSMS_CUSTOMERID }}'
-          BLAULICHTSMS_USERNAME: '${{ secrets.BLAULICHTSMS_USERNAME }}'
-          BLAULICHTSMS_PASSWORD: '${{ secrets.BLAULICHTSMS_PASSWORD }}'
+          BLAULICHTSMS_CUSTOMERID: "${{ secrets.BLAULICHTSMS_CUSTOMERID }}"
+          BLAULICHTSMS_USERNAME: "${{ secrets.BLAULICHTSMS_USERNAME }}"
+          BLAULICHTSMS_PASSWORD: "${{ secrets.BLAULICHTSMS_PASSWORD }}"
+          SKIP_INTEGRATION_TEST: "true"
 
       # - name: "Adjust version number"
       #   shell: "bash"

@@ -23,6 +23,9 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
 
     async def test_auth(self):
         """Test auth."""
+        if os.environ.get("SKIP_INTEGRATION_TEST"):
+            log.info("skipping integration test: test_auth")
+            return
         log.info("tesing auth")
         blaulichtsms = BlaulichtSmsController(
             os.environ["BLAULICHTSMS_CUSTOMERID"],
@@ -35,6 +38,9 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
 
     async def test_alarms(self):
         """Get alarms."""
+        if os.environ.get("SKIP_INTEGRATION_TEST"):
+            log.info("skipping integration test: test_alarms")
+            return
         log.info("fetching alarms")
         blaulichtsms = BlaulichtSmsController(
             os.environ["BLAULICHTSMS_CUSTOMERID"],
@@ -49,6 +55,9 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_last_alarm(self):
         """Get last alarm."""
+        if os.environ.get("SKIP_INTEGRATION_TEST"):
+            log.info("skipping integration test: test_get_last_alarm")
+            return
         blaulichtsms = BlaulichtSmsController(
             os.environ["BLAULICHTSMS_CUSTOMERID"],
             os.environ["BLAULICHTSMS_USERNAME"],

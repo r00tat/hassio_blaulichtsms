@@ -2,10 +2,16 @@
 # setup dev environemnt
 set -eo pipefail
 
-if [[ ! -d "bin" || ! -f "bin/activate" ]]; then
-  python3 -m venv .
-  source bin/activate
-  pip3 install -r requirements.txt
+if [[ -z "$(which uv)" ]]; then
+  echo "uv required!"
+  echo "see https://docs.astral.sh/uv/getting-started/installation/"
+  exit 1
+fi
+
+if [[ ! -d ".venv" ]]; then
+  uv venv
+  source .venv/bin/activate
+  uv pip install -r requirements.txt
 fi
 
 if [[ ! -d "config" ]]; then

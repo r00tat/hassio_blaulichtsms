@@ -1,4 +1,5 @@
 """Blaulicht SMS component."""
+
 import logging
 
 from .constants import DOMAIN, CONF_CUSTOMER_ID
@@ -23,10 +24,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.info("setup entry %s", entry.data[CONF_CUSTOMER_ID])
     # host = entry.data['host']
     # config = hass.data[DOMAIN].get(host)
-    hass.async_create_task(
+    sensor_task = hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
-    hass.async_create_task(
+    binary_sensor_task = hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
     )
+    await sensor_task
+    await binary_sensor_task
     return True

@@ -24,12 +24,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.info("setup entry %s", entry.data[CONF_CUSTOMER_ID])
     # host = entry.data['host']
     # config = hass.data[DOMAIN].get(host)
-    sensor_task = hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "sensor")
+    await hass.config_entries.async_forward_entry_setups(
+        entry, ["sensor", "binary_sensor"]
     )
-    binary_sensor_task = hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
-    )
-    await sensor_task
-    await binary_sensor_task
+
     return True

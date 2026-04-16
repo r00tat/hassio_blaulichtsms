@@ -77,6 +77,176 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
             log.info("alarm %s on %s", alarm.get("alarmText"), alarm.get("alarmDate"))
 
 
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock, patch
+
+
+def _make_alarm(alarm_id="A1", minutes_ago=0, recipients=None):
+    """Build a minimal alarm dict for tests."""
+    alarm_date = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
+    return {
+        "alarmId": alarm_id,
+        "alarmDate": alarm_date.isoformat(),
+        "recipients": recipients or [],
+    }
+
+
+class TestNewAlarmActiveSensor(unittest.TestCase):
+    """Unit tests for BlaulichtSMSNewAlarmActiveSensor."""
+
+    def _make_sensor(self, track_recipient=None, new_alarm_duration=300):
+        from .binary_sensor import BlaulichtSMSNewAlarmActiveSensor
+
+        coordinator = MagicMock()
+        coordinator.data = None
+        coordinator.api = MagicMock()
+        coordinator.api.customer_id = "cust-1"
+        # CoordinatorEntity.__init__ calls async_add_listener; MagicMock handles that.
+        sensor = BlaulichtSMSNewAlarmActiveSensor(
+            coordinator,
+            MagicMock(),  # hass
+            new_alarm_duration,
+            track_recipient,
+        )
+        # async_write_ha_state touches HA internals; replace with a recorder.
+        sensor.async_write_ha_state = MagicMock()
+        return sensor, coordinator
+
+    def test_evaluate_target_within_window_no_track(self):
+        sensor, _ = self._make_sensor()
+        alarm = _make_alarm(minutes_ago=1)
+        self.assertTrue(sensor._evaluate_target(alarm))
+
+    def test_evaluate_target_outside_window_no_track(self):
+        sensor, _ = self._make_sensor()
+        alarm = _make_alarm(minutes_ago=10)
+        self.assertFalse(sensor._evaluate_target(alarm))
+
+    def test_evaluate_target_track_recipient_yes(self):
+        sensor, _ = self._make_sensor(track_recipient="+4312345")
+        alarm = _make_alarm(
+            minutes_ago=1,
+            recipients=[{"msisdn": "+4312345", "participation": "yes"}],
+        )
+        self.assertTrue(sensor._evaluate_target(alarm))
+
+    def test_evaluate_target_track_recipient_no_confirmation(self):
+        sensor, _ = self._make_sensor(track_recipient="+4312345")
+        alarm = _make_alarm(
+            minutes_ago=1,
+            recipients=[{"msisdn": "+4312345", "participation": "no"}],
+        )
+        self.assertFalse(sensor._evaluate_target(alarm))
+
+    def test_evaluate_target_track_recipient_missing(self):
+        sensor, _ = self._make_sensor(track_recipient="+4312345")
+        alarm = _make_alarm(minutes_ago=1, recipients=[])
+        self.assertFalse(sensor._evaluate_target(alarm))
+
+    def test_evaluate_target_track_recipient_yes_but_expired(self):
+        sensor, _ = self._make_sensor(track_recipient="+4312345")
+        alarm = _make_alarm(
+            minutes_ago=10,
+            recipients=[{"msisdn": "+4312345", "participation": "yes"}],
+        )
+        self.assertFalse(sensor._evaluate_target(alarm))
+
+    def test_new_alarm_forces_false_then_true(self):
+        sensor, coordinator = self._make_sensor()
+        # Simulate prior state: was True from a previous alarm
+        sensor._attr_is_on = True
+        sensor._last_alarm_id = "OLD"
+        coordinator.data = _make_alarm(alarm_id="NEW", minutes_ago=1)
+
+        sensor._handle_coordinator_update()
+
+        calls = sensor.async_write_ha_state.call_args_list
+        # Expect two writes: first with is_on False, second with is_on True.
+        self.assertEqual(len(calls), 2)
+        # We inspect the is_on value captured at each call time.
+        # Since async_write_ha_state is called synchronously inside _handle_coordinator_update,
+        # we capture is_on via side_effect in a dedicated test below.
+        self.assertTrue(sensor._attr_is_on)
+        self.assertEqual(sensor._last_alarm_id, "NEW")
+
+    def test_new_alarm_writes_false_before_true(self):
+        sensor, coordinator = self._make_sensor()
+        sensor._attr_is_on = True
+        sensor._last_alarm_id = "OLD"
+        coordinator.data = _make_alarm(alarm_id="NEW", minutes_ago=1)
+
+        captured = []
+        sensor.async_write_ha_state = MagicMock(
+            side_effect=lambda: captured.append(sensor._attr_is_on)
+        )
+
+        sensor._handle_coordinator_update()
+
+        self.assertEqual(captured, [False, True])
+
+    def test_same_alarm_stable_no_extra_false_write(self):
+        sensor, coordinator = self._make_sensor()
+        sensor._attr_is_on = True
+        sensor._last_alarm_id = "SAME"
+        coordinator.data = _make_alarm(alarm_id="SAME", minutes_ago=1)
+
+        sensor._handle_coordinator_update()
+
+        # No state change: no write.
+        sensor.async_write_ha_state.assert_not_called()
+        self.assertTrue(sensor._attr_is_on)
+
+    def test_new_alarm_outside_window_stays_false(self):
+        sensor, coordinator = self._make_sensor()
+        sensor._attr_is_on = False
+        sensor._last_alarm_id = None
+        coordinator.data = _make_alarm(alarm_id="NEW", minutes_ago=10)
+
+        captured = []
+        sensor.async_write_ha_state = MagicMock(
+            side_effect=lambda: captured.append(sensor._attr_is_on)
+        )
+
+        sensor._handle_coordinator_update()
+
+        # One forced False write on new-alarm detection; no flip to True.
+        self.assertEqual(captured, [False])
+        self.assertFalse(sensor._attr_is_on)
+
+    def test_late_confirmation_flips_to_true(self):
+        sensor, coordinator = self._make_sensor(track_recipient="+4312345")
+        # Initial poll: alarm present, no confirmation yet.
+        coordinator.data = _make_alarm(
+            alarm_id="NEW",
+            minutes_ago=1,
+            recipients=[{"msisdn": "+4312345", "participation": "pending"}],
+        )
+        sensor._handle_coordinator_update()
+        self.assertFalse(sensor._attr_is_on)
+
+        # Next poll: same alarm, now confirmed.
+        coordinator.data = _make_alarm(
+            alarm_id="NEW",
+            minutes_ago=2,
+            recipients=[{"msisdn": "+4312345", "participation": "yes"}],
+        )
+        sensor.async_write_ha_state.reset_mock()
+        sensor._handle_coordinator_update()
+
+        self.assertTrue(sensor._attr_is_on)
+        sensor.async_write_ha_state.assert_called_once()
+
+    def test_no_data_stays_off(self):
+        sensor, coordinator = self._make_sensor()
+        sensor._attr_is_on = True
+        coordinator.data = None
+
+        sensor._handle_coordinator_update()
+
+        self.assertFalse(sensor._attr_is_on)
+        sensor.async_write_ha_state.assert_called_once()
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     unittest.main()

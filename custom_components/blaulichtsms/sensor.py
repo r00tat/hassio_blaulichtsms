@@ -133,6 +133,9 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
         """Handle updated data from the coordinator."""
         if self._current_alarm():
             self.update_state_from_coordinator()
+        else:
+            self._attr_native_value = None
+            self._attr_extra_state_attributes = None
         self.async_write_ha_state()
 
     def update_state_from_coordinator(self) -> None:

@@ -51,6 +51,6 @@ Data flow: config entry → `BlaulichtSMSCoordinator.get_coordinator` (singleton
 ## Conventions
 
 - Ruff config is in [.ruff.toml](.ruff.toml) (target `py310`, line length 88, Home Assistant rule set). Run ruff and fix warnings before committing.
-- Version lives in two places: [manifest.json](custom_components/blaulichtsms/manifest.json) `version` and [constants.py](custom_components/blaulichtsms/constants.py) `VERSION`. Keep both in sync when bumping.
+- Version source of truth is [manifest.json](custom_components/blaulichtsms/manifest.json) `version`. `VERSION` in [constants.py](custom_components/blaulichtsms/constants.py) is read from it at import time — do not duplicate the value. The [.github/workflows/release.yml](.github/workflows/release.yml) workflow rewrites `manifest.json` to the release tag when a GitHub Release is published and uploads a ZIP asset, but it does not commit the bump back — update `manifest.json` in `main` manually when cutting a release.
 - User-facing strings are in [strings.json](custom_components/blaulichtsms/strings.json) plus German/English translations in [translations/](custom_components/blaulichtsms/translations/). New `CONF_*` options require entries in all three.
 - The integration is loaded as a package (`custom_components.blaulichtsms.…`) so tests and imports use the full dotted path. Avoid relative scripts outside that package.

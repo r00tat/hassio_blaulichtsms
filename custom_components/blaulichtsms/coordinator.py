@@ -2,99 +2,132 @@
 
 from __future__ import annotations
 
-from homeassistant.core import HomeAssistant
+import asyncio
+import logging
+from datetime import datetime, timedelta, timezone
+
+import aiohttp
+
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
 
-from datetime import timedelta
-import aiohttp
-
-
-from .blaulichtsms import BlaulichtSmsController
+from .blaulichtsms import (
+    BlaulichtSmsAuthenticationError,
+    BlaulichtSmsController,
+    BlaulichtSmsSessionInitException,
+    _parse_alarm_datetime,
+)
 from .constants import (
-    CONF_CUSTOMER_ID,
-    CONF_USERNAME,
-    CONF_PASSWORD,
     CONF_ALARM_DURATION,
+    CONF_CUSTOMER_ID,
+    CONF_PASSWORD,
+    CONF_SCAN_INTERVAL,
     CONF_SHOW_INFOS,
+    CONF_USERNAME,
     DEFAULT_ALARM_DURATION,
+    DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHOW_INFOS,
 )
-
 from .errors import CoordinatorError
-
-
-import logging
-
-import async_timeout
-
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class BlaulichtSMSCoordinator(DataUpdateCoordinator):
-    """My custom coordinator."""
+    """Coordinator for the BlaulichtSMS dashboard API."""
 
     coordinators: dict[str, BlaulichtSMSCoordinator] = {}
 
-    def __init__(self, hass: HomeAssistant, api: BlaulichtSmsController):
-        """Initialize my coordinator."""
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        api: BlaulichtSmsController,
+        scan_interval: int = DEFAULT_SCAN_INTERVAL,
+    ) -> None:
+        """Initialize the coordinator."""
         self.api: BlaulichtSmsController = api
         super().__init__(
             hass,
             _LOGGER,
-            # Name of the data. For logging purposes.
             name="BlaulichtSMS",
-            # Polling interval. Will only be polled if there are subscribers.
-            update_interval=timedelta(seconds=30),
+            update_interval=timedelta(seconds=scan_interval),
         )
 
-    async def _async_update_data(self):
-        """Fetch data from API endpoint.
-
-        This is the place to pre-process the data to lookup tables
-        so entities can quickly look up their data.
-        """
+    async def _async_update_data(self) -> dict:
+        """Fetch data from the API and derive `is_active`."""
         try:
-            # Note: asyncio.TimeoutError and aiohttp.ClientError are already
-            # handled by the data update coordinator.
-            async with async_timeout.timeout(10):
-                # Grab active context variables to limit data required to be fetched from API
-                # Note: using context is not required if there is no need or ability to limit
-                # data retrieved from API.
-                # listening_idx = set(self.async_contexts())
+            async with asyncio.timeout(10):
                 _LOGGER.debug("fetching last alarm")
-                return await self.api.get_last_alarm()
-        except aiohttp.ClientError as err:
+                alarm = await self.api.get_last_alarm()
+        except (BlaulichtSmsAuthenticationError, BlaulichtSmsSessionInitException) as err:
+            raise ConfigEntryAuthFailed(
+                f"Authentication with blaulichtSMS failed: {err}"
+            ) from err
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
+        return {
+            "alarm": alarm,
+            "is_active": self._is_alarm_active(alarm),
+        }
+
+    def _is_alarm_active(self, alarm: dict | None) -> bool:
+        """Return True if the alarm is still within its activity window."""
+        if not alarm:
+            return False
+
+        now = datetime.now(timezone.utc)
+
+        end_date_raw = alarm.get("endDate")
+        if end_date_raw:
+            end_date = _parse_alarm_datetime(end_date_raw)
+            if end_date is not None:
+                return now < end_date
+
+        alarm_date = _parse_alarm_datetime(alarm.get("alarmDate"))
+        if alarm_date is None:
+            return False
+        return now < alarm_date + self.api.alarm_duration
+
     @staticmethod
-    async def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
-        """Get coordinator factory."""
+    async def get_coordinator(
+        hass: HomeAssistant, config: ConfigEntry
+    ) -> BlaulichtSMSCoordinator:
+        """Return an existing coordinator for the customer or create one."""
         if config.data.get(CONF_CUSTOMER_ID) is None:
             raise CoordinatorError("customer id is required")
 
-        if not BlaulichtSMSCoordinator.coordinators.get(config.data[CONF_CUSTOMER_ID]):
-            blaulichtsms = BlaulichtSmsController(
-                config.data[CONF_CUSTOMER_ID],
-                config.data[CONF_USERNAME],
-                config.data[CONF_PASSWORD],
+        customer_id = config.data[CONF_CUSTOMER_ID]
+        if not BlaulichtSMSCoordinator.coordinators.get(customer_id):
+            alarm_duration = config.options.get(
+                CONF_ALARM_DURATION,
                 config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION),
+            )
+            show_infos = config.options.get(
+                CONF_SHOW_INFOS,
                 config.data.get(CONF_SHOW_INFOS, DEFAULT_SHOW_INFOS),
             )
-            # Fetch initial data so we have data when entities subscribe
-            #
-            # If the refresh fails, async_config_entry_first_refresh will
-            # raise ConfigEntryNotReady and setup will try again later
-            #
-            # If you do not want to retry setup on failure, use
-            # coordinator.async_refresh() instead
-            #
-            coordinator = BlaulichtSMSCoordinator(hass, blaulichtsms)
+            scan_interval = config.options.get(
+                CONF_SCAN_INTERVAL,
+                config.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            )
+
+            blaulichtsms = BlaulichtSmsController(
+                customer_id,
+                config.data[CONF_USERNAME],
+                config.data[CONF_PASSWORD],
+                alarm_duration,
+                show_infos,
+                session=async_get_clientsession(hass),
+            )
+            coordinator = BlaulichtSMSCoordinator(hass, blaulichtsms, scan_interval)
 
             await coordinator.async_config_entry_first_refresh()
-            BlaulichtSMSCoordinator.coordinators[CONF_CUSTOMER_ID] = coordinator
-        return BlaulichtSMSCoordinator.coordinators[CONF_CUSTOMER_ID]
+            BlaulichtSMSCoordinator.coordinators[customer_id] = coordinator
+        return BlaulichtSMSCoordinator.coordinators[customer_id]

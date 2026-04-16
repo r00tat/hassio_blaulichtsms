@@ -12,28 +12,39 @@
           "alarm_duration": "Alarm aktiv für Sekunden",
           "new_alarm_duration": "Zeitfenster für neuen Alarm (Sekunden)",
           "show_infos": "Infos als Alarm anzeigen",
-          "track_recipient": "Telefonnumer des Teilnehmers für tracking"
+          "track_recipient": "Telefonnummer des Teilnehmers für tracking",
+          "scan_interval": "Abfrage-Intervall (Sekunden)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Blaulicht SMS erneut authentifizieren",
+        "description": "Passwort hat sich geändert. Bitte erneut eingeben.",
+        "data": {
+          "username": "Username",
+          "password": "Passwort"
         }
       }
     },
+    "error": {
+      "auth": "Authentifizierung fehlgeschlagen",
+      "cannot_connect": "Verbindung zum BlaulichtSMS Dashboard nicht möglich"
+    },
     "abort": {
       "already_configured": "Customer ist bereits konfiguriert",
-      "blsms_auth_failed": "Authentifizierung fehlgeschlagen"
+      "reauth_successful": "Erneute Authentifizierung erfolgreich"
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Blaulicht SMS Setup",
-        "description": "Configure your BlaulichtSMS dashboard credentials",
+        "description": "BlaulichtSMS Dashboard Einstellungen anpassen",
         "data": {
-          "customer_id": "Customer ID",
-          "username": "Username",
-          "password": "Passwort",
           "alarm_duration": "Alarm aktiv für Sekunden",
           "new_alarm_duration": "Zeitfenster für neuen Alarm (Sekunden)",
           "show_infos": "Infos als Alarm anzeigen",
-          "track_recipient": "Telefonnumer des Teilnehmers für tracking"
+          "track_recipient": "Telefonnummer des Teilnehmers für tracking",
+          "scan_interval": "Abfrage-Intervall (Sekunden)"
         }
       }
     },

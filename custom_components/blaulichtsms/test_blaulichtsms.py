@@ -1,14 +1,14 @@
 """BlaulichtSMS tests."""
 
-from typing import Any
+import asyncio
+import json
+import logging
+import os
+import unittest
 from collections.abc import Coroutine
 from datetime import datetime, timedelta, timezone
+from typing import Any
 from unittest.mock import MagicMock
-import asyncio
-import unittest
-import os
-import logging
-import json
 
 from .blaulichtsms import BlaulichtSmsController
 
@@ -16,7 +16,7 @@ log = logging.getLogger("TestBlaulichtSMS")
 
 
 class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
-    """test blaulichtsms api."""
+    """Integration tests that hit the real API. Gated by SKIP_INTEGRATION_TEST."""
 
     async def asyncTearDown(self) -> Coroutine[Any, Any, None]:
         """Tear down tests."""
@@ -28,14 +28,12 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         if os.environ.get("SKIP_INTEGRATION_TEST"):
             log.info("skipping integration test: test_auth")
             return
-        log.info("tesing auth")
         blaulichtsms = BlaulichtSmsController(
             os.environ["BLAULICHTSMS_CUSTOMERID"],
             os.environ["BLAULICHTSMS_USERNAME"],
             os.environ["BLAULICHTSMS_PASSWORD"],
         )
         token = await blaulichtsms.get_session()
-        log.info("token: %s", token)
         self.assertIsNotNone(token)
 
     async def test_alarms(self):
@@ -43,7 +41,6 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         if os.environ.get("SKIP_INTEGRATION_TEST"):
             log.info("skipping integration test: test_alarms")
             return
-        log.info("fetching alarms")
         blaulichtsms = BlaulichtSmsController(
             os.environ["BLAULICHTSMS_CUSTOMERID"],
             os.environ["BLAULICHTSMS_USERNAME"],
@@ -51,7 +48,6 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         )
         alarms = await blaulichtsms.get_anonymized_alarms()
         self.assertIsNotNone(alarms)
-
         log.info("alarms %s", json.dumps(alarms))
         self.assertGreaterEqual(len(alarms), 0)
 
@@ -69,58 +65,71 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         alarms = await blaulichtsms.get_anonymized_alarms()
         self.assertIsNotNone(alarms)
 
-        log.info("fetch last alarm")
         alarm = await blaulichtsms.get_last_alarm()
 
         if len(alarms) == 0:
             self.assertIsNone(alarm)
         else:
             self.assertIsNotNone(alarm)
-            log.info("alarm %s on %s", alarm.get("alarmText"), alarm.get("alarmDate"))
 
 
-def _make_alarm(alarm_id="A1", minutes_ago=0, recipients=None):
+def _make_alarm(alarm_id="A1", minutes_ago=0, recipients=None, end_minutes_ahead=None):
     """Build a minimal alarm dict for tests."""
     alarm_date = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
-    return {
+    alarm = {
         "alarmId": alarm_id,
         "alarmDate": alarm_date.isoformat(),
         "recipients": recipients or [],
     }
+    if end_minutes_ahead is not None:
+        alarm["endDate"] = (
+            datetime.now(timezone.utc) + timedelta(minutes=end_minutes_ahead)
+        ).isoformat()
+    return alarm
+
+
+def _wrap(alarm, *, is_active=None):
+    """Build the coordinator.data shape used by all entities."""
+    if alarm is None:
+        return {"alarm": None, "is_active": False}
+    if is_active is None:
+        alarm_date_raw = alarm.get("alarmDate")
+        alarm_date = datetime.fromisoformat(alarm_date_raw) if alarm_date_raw else None
+        is_active = (
+            alarm_date is not None
+            and datetime.now(alarm_date.tzinfo) < alarm_date + timedelta(seconds=300)
+        )
+    return {"alarm": alarm, "is_active": is_active}
 
 
 class TestNewAlarmActiveSensor(unittest.TestCase):
     """Unit tests for BlaulichtSMSNewAlarmActiveSensor."""
 
     def _make_sensor(self, track_recipient=None, new_alarm_duration=300):
+        """Construct a sensor with a stubbed coordinator."""
         from .binary_sensor import BlaulichtSMSNewAlarmActiveSensor
 
         coordinator = MagicMock()
         coordinator.data = None
         coordinator.api = MagicMock()
         coordinator.api.customer_id = "cust-1"
-        # CoordinatorEntity.__init__ calls async_add_listener; MagicMock handles that.
         sensor = BlaulichtSMSNewAlarmActiveSensor(
             coordinator,
-            MagicMock(),  # hass
             new_alarm_duration,
             track_recipient,
         )
-        # async_write_ha_state touches HA internals; replace with a recorder.
         sensor.async_write_ha_state = MagicMock()
         return sensor, coordinator
 
     def test_evaluate_target_within_window_no_track(self):
         """Fresh alarm without track_recipient returns True."""
         sensor, _ = self._make_sensor()
-        alarm = _make_alarm(minutes_ago=1)
-        self.assertTrue(sensor._evaluate_target(alarm))
+        self.assertTrue(sensor._evaluate_target(_make_alarm(minutes_ago=1)))
 
     def test_evaluate_target_outside_window_no_track(self):
         """Alarm older than the window returns False."""
         sensor, _ = self._make_sensor()
-        alarm = _make_alarm(minutes_ago=10)
-        self.assertFalse(sensor._evaluate_target(alarm))
+        self.assertFalse(sensor._evaluate_target(_make_alarm(minutes_ago=10)))
 
     def test_evaluate_target_track_recipient_yes(self):
         """Tracked recipient with participation=yes returns True."""
@@ -141,13 +150,14 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertFalse(sensor._evaluate_target(alarm))
 
     def test_evaluate_target_track_recipient_missing(self):
-        """Tracked recipient not in list returns False."""
+        """Tracked recipient missing from alarm payload returns False."""
         sensor, _ = self._make_sensor(track_recipient="+4312345")
-        alarm = _make_alarm(minutes_ago=1, recipients=[])
-        self.assertFalse(sensor._evaluate_target(alarm))
+        self.assertFalse(
+            sensor._evaluate_target(_make_alarm(minutes_ago=1, recipients=[]))
+        )
 
     def test_evaluate_target_track_recipient_yes_but_expired(self):
-        """Late confirmation after window expired stays False."""
+        """Expired window returns False even with a yes confirmation."""
         sensor, _ = self._make_sensor(track_recipient="+4312345")
         alarm = _make_alarm(
             minutes_ago=10,
@@ -156,25 +166,24 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertFalse(sensor._evaluate_target(alarm))
 
     def test_new_alarm_forces_false_then_true(self):
-        """A new alarm id triggers two state writes in one cycle."""
+        """New alarm id flips is_on False then re-evaluates to True."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = True
         sensor._last_alarm_id = "OLD"
-        coordinator.data = _make_alarm(alarm_id="NEW", minutes_ago=1)
+        coordinator.data = _wrap(_make_alarm(alarm_id="NEW", minutes_ago=1))
 
         sensor._handle_coordinator_update()
 
-        calls = sensor.async_write_ha_state.call_args_list
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(sensor.async_write_ha_state.call_args_list), 2)
         self.assertTrue(sensor._attr_is_on)
         self.assertEqual(sensor._last_alarm_id, "NEW")
 
     def test_new_alarm_writes_false_before_true(self):
-        """The forced False write happens before the True write."""
+        """State writes happen in order: False, then True."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = True
         sensor._last_alarm_id = "OLD"
-        coordinator.data = _make_alarm(alarm_id="NEW", minutes_ago=1)
+        coordinator.data = _wrap(_make_alarm(alarm_id="NEW", minutes_ago=1))
 
         captured = []
         sensor.async_write_ha_state = MagicMock(
@@ -186,11 +195,11 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertEqual(captured, [False, True])
 
     def test_same_alarm_stable_no_extra_false_write(self):
-        """Unchanged alarm id does not produce spurious writes."""
+        """Same alarm id with stable state writes nothing."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = True
         sensor._last_alarm_id = "SAME"
-        coordinator.data = _make_alarm(alarm_id="SAME", minutes_ago=1)
+        coordinator.data = _wrap(_make_alarm(alarm_id="SAME", minutes_ago=1))
 
         sensor._handle_coordinator_update()
 
@@ -198,11 +207,11 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertTrue(sensor._attr_is_on)
 
     def test_new_alarm_outside_window_stays_false(self):
-        """New alarm outside the window emits only the forced False."""
+        """New alarm outside its window leaves is_on False."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = False
         sensor._last_alarm_id = None
-        coordinator.data = _make_alarm(alarm_id="NEW", minutes_ago=10)
+        coordinator.data = _wrap(_make_alarm(alarm_id="NEW", minutes_ago=10))
 
         captured = []
         sensor.async_write_ha_state = MagicMock(
@@ -215,20 +224,24 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertFalse(sensor._attr_is_on)
 
     def test_late_confirmation_flips_to_true(self):
-        """A later confirmation on the same alarm flips to True."""
+        """A recipient confirming later flips is_on to True."""
         sensor, coordinator = self._make_sensor(track_recipient="+4312345")
-        coordinator.data = _make_alarm(
-            alarm_id="NEW",
-            minutes_ago=1,
-            recipients=[{"msisdn": "+4312345", "participation": "pending"}],
+        coordinator.data = _wrap(
+            _make_alarm(
+                alarm_id="NEW",
+                minutes_ago=1,
+                recipients=[{"msisdn": "+4312345", "participation": "pending"}],
+            )
         )
         sensor._handle_coordinator_update()
         self.assertFalse(sensor._attr_is_on)
 
-        coordinator.data = _make_alarm(
-            alarm_id="NEW",
-            minutes_ago=2,
-            recipients=[{"msisdn": "+4312345", "participation": "yes"}],
+        coordinator.data = _wrap(
+            _make_alarm(
+                alarm_id="NEW",
+                minutes_ago=2,
+                recipients=[{"msisdn": "+4312345", "participation": "yes"}],
+            )
         )
         sensor.async_write_ha_state.reset_mock()
         sensor._handle_coordinator_update()
@@ -237,7 +250,7 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         sensor.async_write_ha_state.assert_called_once()
 
     def test_no_data_stays_off(self):
-        """Missing coordinator data turns a True sensor off with one write."""
+        """Missing coordinator data turns the sensor off."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = True
         coordinator.data = None
@@ -246,6 +259,140 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
 
         self.assertFalse(sensor._attr_is_on)
         sensor.async_write_ha_state.assert_called_once()
+
+
+class TestAlarmActiveSensor(unittest.TestCase):
+    """Tests for the `is_active`-driven BlaulichtSMSAlarmActiveSensor."""
+
+    def _make_sensor(self):
+        """Construct an AlarmActive sensor with a stubbed coordinator."""
+        from .binary_sensor import BlaulichtSMSAlarmActiveSensor
+
+        coordinator = MagicMock()
+        coordinator.data = None
+        coordinator.api = MagicMock()
+        coordinator.api.customer_id = "cust-1"
+        sensor = BlaulichtSMSAlarmActiveSensor(coordinator)
+        sensor.async_write_ha_state = MagicMock()
+        return sensor, coordinator
+
+    def test_off_when_no_data(self):
+        """Sensor stays off when coordinator has no data yet."""
+        sensor, coordinator = self._make_sensor()
+        coordinator.data = None
+        sensor._handle_coordinator_update()
+        self.assertFalse(sensor._attr_is_on)
+
+    def test_on_when_is_active_true(self):
+        """Sensor turns on when coordinator signals is_active=True."""
+        sensor, coordinator = self._make_sensor()
+        coordinator.data = {"alarm": {"alarmId": "A"}, "is_active": True}
+        sensor._handle_coordinator_update()
+        self.assertTrue(sensor._attr_is_on)
+
+    def test_off_when_is_active_false(self):
+        """Sensor turns off when coordinator signals is_active=False."""
+        sensor, coordinator = self._make_sensor()
+        coordinator.data = {"alarm": {"alarmId": "A"}, "is_active": False}
+        sensor._handle_coordinator_update()
+        self.assertFalse(sensor._attr_is_on)
+
+
+class TestCoordinatorIsAlarmActive(unittest.TestCase):
+    """Tests for BlaulichtSMSCoordinator._is_alarm_active."""
+
+    def _make_coordinator(self, alarm_duration_seconds=3600):
+        """Construct a coordinator with a stubbed api for _is_alarm_active tests."""
+        from .coordinator import BlaulichtSMSCoordinator
+
+        coordinator = BlaulichtSMSCoordinator.__new__(BlaulichtSMSCoordinator)
+        coordinator.api = MagicMock()
+        coordinator.api.alarm_duration = timedelta(seconds=alarm_duration_seconds)
+        return coordinator
+
+    def test_none_alarm_is_inactive(self):
+        """A None alarm is never active."""
+        coordinator = self._make_coordinator()
+        self.assertFalse(coordinator._is_alarm_active(None))
+
+    def test_recent_alarm_is_active(self):
+        """A recent alarm within alarm_duration is active."""
+        coordinator = self._make_coordinator()
+        self.assertTrue(coordinator._is_alarm_active(_make_alarm(minutes_ago=10)))
+
+    def test_old_alarm_is_inactive(self):
+        """An alarm older than alarm_duration is inactive."""
+        coordinator = self._make_coordinator()
+        self.assertFalse(
+            coordinator._is_alarm_active(_make_alarm(minutes_ago=120))
+        )
+
+    def test_end_date_in_future_is_active(self):
+        """End date in the future overrides an expired alarm_duration."""
+        coordinator = self._make_coordinator(alarm_duration_seconds=10)
+        alarm = _make_alarm(minutes_ago=120, end_minutes_ahead=5)
+        self.assertTrue(coordinator._is_alarm_active(alarm))
+
+    def test_end_date_in_past_is_inactive(self):
+        """End date in the past overrides a fresh alarm_duration."""
+        coordinator = self._make_coordinator(alarm_duration_seconds=3600)
+        alarm = _make_alarm(minutes_ago=5)
+        alarm["endDate"] = (
+            datetime.now(timezone.utc) - timedelta(minutes=1)
+        ).isoformat()
+        self.assertFalse(coordinator._is_alarm_active(alarm))
+
+    def test_missing_alarm_date_is_inactive(self):
+        """An alarm without alarmDate and no endDate is inactive."""
+        coordinator = self._make_coordinator()
+        self.assertFalse(coordinator._is_alarm_active({"alarmId": "X"}))
+
+
+class TestSensorEntity(unittest.TestCase):
+    """Tests for the generic BlaulichtSMSEntity using the wrapped data shape."""
+
+    def _make_sensor(self, attribute, config_data=None):
+        """Construct a BlaulichtSMSEntity with a stubbed coordinator."""
+        from .sensor import BlaulichtSMSEntity
+
+        coordinator = MagicMock()
+        coordinator.data = None
+        coordinator.api = MagicMock()
+        coordinator.api.customer_id = "cust-1"
+        config = MagicMock()
+        config.data = config_data or {}
+        sensor = BlaulichtSMSEntity(coordinator, attribute, config)
+        sensor.async_write_ha_state = MagicMock()
+        return sensor, coordinator
+
+    def test_alarm_text_replaces_slash(self):
+        """Alarm text values get spaced slashes."""
+        sensor, coordinator = self._make_sensor("alarmText")
+        coordinator.data = _wrap({"alarmText": "B4/Brand"})
+        sensor._handle_coordinator_update()
+        self.assertEqual(sensor._attr_native_value, "B4 / Brand")
+
+    def test_track_recipient_missing_returns_unknown(self):
+        """Missing recipient yields 'unknown' rather than raising."""
+        sensor, coordinator = self._make_sensor(
+            "track_recipient",
+            config_data={"track_recipient": "+4399"},
+        )
+        coordinator.data = _wrap({"recipients": []})
+        sensor._handle_coordinator_update()
+        self.assertEqual(sensor._attr_native_value, "unknown")
+
+    def test_track_recipient_found(self):
+        """Found recipient returns their participation value."""
+        sensor, coordinator = self._make_sensor(
+            "track_recipient",
+            config_data={"track_recipient": "+4399"},
+        )
+        coordinator.data = _wrap(
+            {"recipients": [{"msisdn": "+4399", "participation": "yes"}]}
+        )
+        sensor._handle_coordinator_update()
+        self.assertEqual(sensor._attr_native_value, "yes")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 """blaulichtsms sensors."""
 
 import logging
-from datetime import datetime
 
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
@@ -12,14 +11,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.sensor import DeviceInfo
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .base import BlaulichtSMSBaseEntity
+from .blaulichtsms import _parse_alarm_datetime
 from .constants import (
     CONF_CUSTOMER_ID,
     CONF_TRACK_RECIPIENT,
-    DOMAIN,
-    VERSION,
 )
 from .coordinator import BlaulichtSMSCoordinator
 from .schema import BLAULICHTSMS_SCHEMA
@@ -134,25 +131,25 @@ SENSOR_ICONS = {
     CONF_TRACK_RECIPIENT: "mdi:cellphone-check",
 }
 
-SENSOR_NAMES = {
-    "customerId": "Kunden-ID",
-    "customerName": "Kunde",
-    "alarmId": "Alarm-ID",
-    "alarmGroups": "Alarmgruppen",
-    "alarmDate": "Alarmzeit",
-    "endDate": "Endzeit",
-    "authorName": "Verfasser",
-    "alarmText": "Alarmtext",
-    "audioUrl": "Audio-URL",
-    "usersAlertedCount": "Alarmierte Nutzer",
-    "coordinates": "Koordinaten",
-    "recipients_yes": "Empfänger Zusage",
-    "recipients_no": "Empfänger Absage",
-    "recipients_pending": "Empfänger Ausstehend",
-    "recipients_total": "Empfänger Gesamt",
-    "confirmed_by_function": "Zusagen nach Funktion",
-    "address": "Adresse",
-    CONF_TRACK_RECIPIENT: "Verfolgter Empfänger",
+TRANSLATION_KEYS = {
+    "customerId": "customer_id",
+    "customerName": "customer_name",
+    "alarmId": "alarm_id",
+    "alarmGroups": "alarm_groups",
+    "alarmDate": "alarm_date",
+    "endDate": "end_date",
+    "authorName": "author_name",
+    "alarmText": "alarm_text",
+    "audioUrl": "audio_url",
+    "usersAlertedCount": "users_alerted_count",
+    "coordinates": "coordinates",
+    "recipients_yes": "recipients_yes",
+    "recipients_no": "recipients_no",
+    "recipients_pending": "recipients_pending",
+    "recipients_total": "recipients_total",
+    "confirmed_by_function": "confirmed_by_function",
+    "address": "address",
+    CONF_TRACK_RECIPIENT: "track_recipient",
 }
 
 
@@ -209,7 +206,7 @@ async def setup_blaulichtsms(
     return True
 
 
-class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
+class BlaulichtSMSEntity(BlaulichtSMSBaseEntity, SensorEntity):
     """Blaulichtsms generic sensor entity."""
 
     def __init__(
@@ -222,8 +219,11 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator, context=attribute)
         self.blaulichtsms = coordinator.api
         self.attribute = attribute
-        friendly = SENSOR_NAMES.get(self.attribute, self.attribute)
-        self._attr_name = f"BlaulichtSMS {friendly}"
+        translation_key = TRANSLATION_KEYS.get(self.attribute)
+        if translation_key:
+            self._attr_translation_key = translation_key
+        else:
+            self._attr_name = self.attribute
         self._attr_unique_id = f"blsms-{self.blaulichtsms.customer_id}-{self.attribute}"
         self._is_date = self.attribute.lower().endswith("date")
         if self._is_date:
@@ -282,9 +282,7 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
             return
 
         if self._is_date:
-            self._attr_native_value = (
-                datetime.fromisoformat(new_value) if new_value else None
-            )
+            self._attr_native_value = _parse_alarm_datetime(new_value)
         elif self.attribute == "alarmText":
             self._attr_native_value = f"{new_value}".replace("/", " / ")
         elif self.attribute == "alarmGroups":
@@ -327,14 +325,3 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
     def suggested_object_id(self) -> str:
         """Preserve the pre-rename entity_id for fresh installations."""
         return f"blaulichtsms_{self.attribute.lower()}"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.blaulichtsms.customer_id)},
-            name=f"BlaulichtSMS {self.blaulichtsms.customer_id}",
-            manufacturer="BlaulichtSMS",
-            model="API",
-            sw_version=VERSION,
-        )

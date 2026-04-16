@@ -33,6 +33,7 @@ from .constants import (
     DEFAULT_ALARM_DURATION,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHOW_INFOS,
+    DOMAIN,
 )
 from .errors import CoordinatorError
 
@@ -41,8 +42,6 @@ _LOGGER = logging.getLogger(__name__)
 
 class BlaulichtSMSCoordinator(DataUpdateCoordinator):
     """Coordinator for the BlaulichtSMS dashboard API."""
-
-    coordinators: dict[str, BlaulichtSMSCoordinator] = {}
 
     def __init__(
         self,
@@ -99,35 +98,42 @@ class BlaulichtSMSCoordinator(DataUpdateCoordinator):
     async def get_coordinator(
         hass: HomeAssistant, config: ConfigEntry
     ) -> BlaulichtSMSCoordinator:
-        """Return an existing coordinator for the customer or create one."""
+        """Return the coordinator for this config entry, creating it on first call.
+
+        The coordinator is cached in ``hass.data[DOMAIN][entry.entry_id]`` so
+        subsequent platform setups reuse the same instance.
+        """
         if config.data.get(CONF_CUSTOMER_ID) is None:
             raise CoordinatorError("customer id is required")
 
-        customer_id = config.data[CONF_CUSTOMER_ID]
-        if not BlaulichtSMSCoordinator.coordinators.get(customer_id):
-            alarm_duration = config.options.get(
-                CONF_ALARM_DURATION,
-                config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION),
-            )
-            show_infos = config.options.get(
-                CONF_SHOW_INFOS,
-                config.data.get(CONF_SHOW_INFOS, DEFAULT_SHOW_INFOS),
-            )
-            scan_interval = config.options.get(
-                CONF_SCAN_INTERVAL,
-                config.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-            )
+        store = hass.data.setdefault(DOMAIN, {})
+        existing = store.get(config.entry_id)
+        if existing is not None:
+            return existing
 
-            blaulichtsms = BlaulichtSmsController(
-                customer_id,
-                config.data[CONF_USERNAME],
-                config.data[CONF_PASSWORD],
-                alarm_duration,
-                show_infos,
-                session=async_get_clientsession(hass),
-            )
-            coordinator = BlaulichtSMSCoordinator(hass, blaulichtsms, scan_interval)
+        alarm_duration = config.options.get(
+            CONF_ALARM_DURATION,
+            config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION),
+        )
+        show_infos = config.options.get(
+            CONF_SHOW_INFOS,
+            config.data.get(CONF_SHOW_INFOS, DEFAULT_SHOW_INFOS),
+        )
+        scan_interval = config.options.get(
+            CONF_SCAN_INTERVAL,
+            config.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        )
 
-            await coordinator.async_config_entry_first_refresh()
-            BlaulichtSMSCoordinator.coordinators[customer_id] = coordinator
-        return BlaulichtSMSCoordinator.coordinators[customer_id]
+        blaulichtsms = BlaulichtSmsController(
+            config.data[CONF_CUSTOMER_ID],
+            config.data[CONF_USERNAME],
+            config.data[CONF_PASSWORD],
+            alarm_duration,
+            show_infos,
+            session=async_get_clientsession(hass),
+        )
+        coordinator = BlaulichtSMSCoordinator(hass, blaulichtsms, scan_interval)
+
+        await coordinator.async_config_entry_first_refresh()
+        store[config.entry_id] = coordinator
+        return coordinator

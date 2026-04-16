@@ -58,5 +58,32 @@
       }
     },
     "abort": {}
+  },
+  "entity": {
+    "sensor": {
+      "customer_id": { "name": "Kunden-ID" },
+      "customer_name": { "name": "Kunde" },
+      "alarm_id": { "name": "Alarm-ID" },
+      "alarm_groups": { "name": "Alarmgruppen" },
+      "alarm_date": { "name": "Alarmzeit" },
+      "end_date": { "name": "Endzeit" },
+      "author_name": { "name": "Verfasser" },
+      "alarm_text": { "name": "Alarmtext" },
+      "audio_url": { "name": "Audio-URL" },
+      "users_alerted_count": { "name": "Alarmierte Nutzer" },
+      "coordinates": { "name": "Koordinaten" },
+      "recipients_yes": { "name": "Empfänger Zusage" },
+      "recipients_no": { "name": "Empfänger Absage" },
+      "recipients_pending": { "name": "Empfänger Ausstehend" },
+      "recipients_total": { "name": "Empfänger Gesamt" },
+      "confirmed_by_function": { "name": "Zusagen nach Funktion" },
+      "address": { "name": "Adresse" },
+      "track_recipient": { "name": "Verfolgter Empfänger" }
+    },
+    "binary_sensor": {
+      "alarm_active": { "name": "Alarm aktiv" },
+      "needs_acknowledgement": { "name": "Bestätigung erforderlich" },
+      "new_alarm_active": { "name": "Neuer Alarm aktiv" }
+    }
   }
 }

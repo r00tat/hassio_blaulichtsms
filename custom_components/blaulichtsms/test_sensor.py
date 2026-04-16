@@ -175,22 +175,22 @@ class TestSensorIconsAndNames(unittest.TestCase):
         config.data = config_data or {}
         return BlaulichtSMSEntity(coordinator, attribute, config)
 
-    def test_every_configured_attribute_has_icon_and_name(self):
-        """SENSOR_ICONS and SENSOR_NAMES cover every exposed attribute."""
+    def test_every_configured_attribute_has_icon_and_translation_key(self):
+        """SENSOR_ICONS and TRANSLATION_KEYS cover every exposed attribute."""
         from .constants import CONF_TRACK_RECIPIENT
         from .sensor import (
             DERIVED_FIELDS,
             RECIPIENT_COUNT_FIELDS,
             SENSOR_FIELDS,
             SENSOR_ICONS,
-            SENSOR_NAMES,
+            TRANSLATION_KEYS,
         )
 
         expected = set(
             SENSOR_FIELDS + RECIPIENT_COUNT_FIELDS + DERIVED_FIELDS
         ) | {CONF_TRACK_RECIPIENT}
         self.assertTrue(expected.issubset(SENSOR_ICONS.keys()))
-        self.assertTrue(expected.issubset(SENSOR_NAMES.keys()))
+        self.assertTrue(expected.issubset(TRANSLATION_KEYS.keys()))
 
     def test_icon_assigned_from_mapping(self):
         """Constructor assigns _attr_icon from SENSOR_ICONS."""
@@ -202,26 +202,27 @@ class TestSensorIconsAndNames(unittest.TestCase):
             )
             self.assertEqual(sensor._attr_icon, icon, attribute)
 
-    def test_display_name_uses_german_label(self):
-        """Display name embeds the German label, not the raw attribute key."""
+    def test_translation_key_maps_attribute(self):
+        """Entities expose a translation key matching TRANSLATION_KEYS."""
         sensor = self._make_sensor("alarmText")
-        self.assertEqual(sensor._attr_name, "BlaulichtSMS Alarmtext")
+        self.assertTrue(sensor._attr_has_entity_name)
+        self.assertEqual(sensor._attr_translation_key, "alarm_text")
 
-    def test_display_name_for_recipient_counts(self):
-        """Recipient counts use German labels."""
+    def test_translation_key_for_recipient_counts(self):
+        """Recipient counts map to their snake_case translation keys."""
         sensor_yes = self._make_sensor("recipients_yes")
-        self.assertEqual(sensor_yes._attr_name, "BlaulichtSMS Empfänger Zusage")
+        self.assertEqual(sensor_yes._attr_translation_key, "recipients_yes")
         sensor_total = self._make_sensor("recipients_total")
-        self.assertEqual(sensor_total._attr_name, "BlaulichtSMS Empfänger Gesamt")
+        self.assertEqual(sensor_total._attr_translation_key, "recipients_total")
 
-    def test_display_name_for_tracked_recipient(self):
-        """track_recipient uses the German label."""
+    def test_translation_key_for_tracked_recipient(self):
+        """track_recipient maps to its translation key."""
         from .constants import CONF_TRACK_RECIPIENT
 
         sensor = self._make_sensor(
             CONF_TRACK_RECIPIENT, config_data={CONF_TRACK_RECIPIENT: "+4399"}
         )
-        self.assertEqual(sensor._attr_name, "BlaulichtSMS Verfolgter Empfänger")
+        self.assertEqual(sensor._attr_translation_key, "track_recipient")
 
     def test_unique_id_preserves_attribute_key(self):
         """unique_id keeps the raw attribute key so existing entities survive."""

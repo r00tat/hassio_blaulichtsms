@@ -1,23 +1,21 @@
 """Blaulichtsms Binary Sensors."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.sensor import DeviceInfo
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .base import BlaulichtSMSBaseEntity
+from .blaulichtsms import _parse_alarm_datetime
 from .constants import (
     CONF_CUSTOMER_ID,
     CONF_NEW_ALARM_DURATION,
     CONF_TRACK_RECIPIENT,
     DEFAULT_NEW_ALARM_DURATION,
-    DOMAIN,
-    VERSION,
 )
 from .coordinator import BlaulichtSMSCoordinator
 from .schema import BLAULICHTSMS_SCHEMA
@@ -79,7 +77,7 @@ async def setup_blaulichtsms(
     return True
 
 
-class _BlaulichtSMSBinarySensorBase(CoordinatorEntity, BinarySensorEntity):
+class _BlaulichtSMSBinarySensorBase(BlaulichtSMSBaseEntity, BinarySensorEntity):
     """Shared device info for all blaulichtSMS binary sensors."""
 
     _suggested_slug: str = ""
@@ -89,18 +87,6 @@ class _BlaulichtSMSBinarySensorBase(CoordinatorEntity, BinarySensorEntity):
         """Preserve the pre-rename entity_id for fresh installations."""
         return self._suggested_slug or None
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        customer_id = self.coordinator.api.customer_id
-        return DeviceInfo(
-            identifiers={(DOMAIN, customer_id)},
-            name=f"BlaulichtSMS {customer_id}",
-            manufacturer="BlaulichtSMS",
-            model="API",
-            sw_version=VERSION,
-        )
-
 
 class BlaulichtSMSAlarmActiveSensor(_BlaulichtSMSBinarySensorBase):
     """Binary sensor indicating whether the last alarm is still active."""
@@ -109,7 +95,7 @@ class BlaulichtSMSAlarmActiveSensor(_BlaulichtSMSBinarySensorBase):
         """Create the sensor."""
         super().__init__(coordinator, context="alarm-active")
         customer_id = coordinator.api.customer_id
-        self._attr_name = "BlaulichtSMS Alarm aktiv"
+        self._attr_translation_key = "alarm_active"
         self._attr_unique_id = f"blsms-{customer_id}-alarm-active"
         self._attr_icon = "mdi:alarm-light"
         self._suggested_slug = "blaulichtsms_alarm_active"
@@ -133,7 +119,7 @@ class BlaulichtSMSNeedsAcknowledgementSensor(_BlaulichtSMSBinarySensorBase):
         """Create the sensor."""
         super().__init__(coordinator, context="needs-acknowledgement")
         customer_id = coordinator.api.customer_id
-        self._attr_name = "BlaulichtSMS Bestätigung erforderlich"
+        self._attr_translation_key = "needs_acknowledgement"
         self._attr_unique_id = f"blsms-{customer_id}-needs-acknowledgement"
         self._attr_icon = "mdi:bell-alert-outline"
         self._suggested_slug = "blaulichtsms_needs_acknowledgement"
@@ -167,7 +153,7 @@ class BlaulichtSMSNewAlarmActiveSensor(_BlaulichtSMSBinarySensorBase):
         self._new_alarm_duration = new_alarm_duration
         self._track_recipient = track_recipient or None
         self._last_alarm_id = None
-        self._attr_name = "BlaulichtSMS Neuer Alarm aktiv"
+        self._attr_translation_key = "new_alarm_active"
         self._attr_unique_id = f"blsms-{customer_id}-new-alarm-active"
         self._attr_icon = "mdi:bell-alert"
         self._suggested_slug = "blaulichtsms_new_alarm_active"
@@ -202,11 +188,10 @@ class BlaulichtSMSNewAlarmActiveSensor(_BlaulichtSMSBinarySensorBase):
 
     def _evaluate_target(self, alarm: dict) -> bool:
         """Return the intended is_on value for the given alarm payload."""
-        alarm_date_raw = alarm.get("alarmDate")
-        if not alarm_date_raw:
+        alarm_date = _parse_alarm_datetime(alarm.get("alarmDate"))
+        if alarm_date is None:
             return False
-        alarm_date = datetime.fromisoformat(alarm_date_raw)
-        within_window = datetime.now(alarm_date.tzinfo) < alarm_date + timedelta(
+        within_window = datetime.now(timezone.utc) < alarm_date + timedelta(
             seconds=self._new_alarm_duration
         )
         if not within_window:

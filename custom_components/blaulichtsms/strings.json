@@ -58,5 +58,32 @@
       }
     },
     "abort": {}
+  },
+  "entity": {
+    "sensor": {
+      "customer_id": { "name": "Customer ID" },
+      "customer_name": { "name": "Customer" },
+      "alarm_id": { "name": "Alarm ID" },
+      "alarm_groups": { "name": "Alarm groups" },
+      "alarm_date": { "name": "Alarm time" },
+      "end_date": { "name": "End time" },
+      "author_name": { "name": "Author" },
+      "alarm_text": { "name": "Alarm text" },
+      "audio_url": { "name": "Audio URL" },
+      "users_alerted_count": { "name": "Alerted users" },
+      "coordinates": { "name": "Coordinates" },
+      "recipients_yes": { "name": "Recipients accepted" },
+      "recipients_no": { "name": "Recipients declined" },
+      "recipients_pending": { "name": "Recipients pending" },
+      "recipients_total": { "name": "Recipients total" },
+      "confirmed_by_function": { "name": "Confirmations by function" },
+      "address": { "name": "Address" },
+      "track_recipient": { "name": "Tracked recipient" }
+    },
+    "binary_sensor": {
+      "alarm_active": { "name": "Alarm active" },
+      "needs_acknowledgement": { "name": "Acknowledgement required" },
+      "new_alarm_active": { "name": "New alarm active" }
+    }
   }
 }

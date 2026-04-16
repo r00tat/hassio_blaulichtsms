@@ -290,28 +290,25 @@ class TestBinarySensorIcons(unittest.TestCase):
         sensor = BlaulichtSMSNewAlarmActiveSensor(self._coordinator(), 300, None)
         self.assertEqual(sensor._attr_icon, "mdi:bell-alert")
 
-    def test_german_display_names(self):
-        """Binary sensors expose German display names."""
+    def test_translation_keys(self):
+        """Binary sensors expose translation keys and enable has_entity_name."""
         from .binary_sensor import (
             BlaulichtSMSAlarmActiveSensor,
             BlaulichtSMSNeedsAcknowledgementSensor,
             BlaulichtSMSNewAlarmActiveSensor,
         )
 
-        self.assertEqual(
-            BlaulichtSMSAlarmActiveSensor(self._coordinator())._attr_name,
-            "BlaulichtSMS Alarm aktiv",
+        alarm_active = BlaulichtSMSAlarmActiveSensor(self._coordinator())
+        self.assertTrue(alarm_active._attr_has_entity_name)
+        self.assertEqual(alarm_active._attr_translation_key, "alarm_active")
+
+        needs_ack = BlaulichtSMSNeedsAcknowledgementSensor(self._coordinator())
+        self.assertEqual(needs_ack._attr_translation_key, "needs_acknowledgement")
+
+        new_alarm = BlaulichtSMSNewAlarmActiveSensor(
+            self._coordinator(), 300, None
         )
-        self.assertEqual(
-            BlaulichtSMSNeedsAcknowledgementSensor(self._coordinator())._attr_name,
-            "BlaulichtSMS Bestätigung erforderlich",
-        )
-        self.assertEqual(
-            BlaulichtSMSNewAlarmActiveSensor(
-                self._coordinator(), 300, None
-            )._attr_name,
-            "BlaulichtSMS Neuer Alarm aktiv",
-        )
+        self.assertEqual(new_alarm._attr_translation_key, "new_alarm_active")
 
     def test_suggested_object_id_preserves_old_slug(self):
         """suggested_object_id matches the pre-rename entity_id for new installs."""

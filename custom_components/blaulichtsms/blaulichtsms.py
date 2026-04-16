@@ -1,10 +1,14 @@
 """BlaulichtSMS API."""
 
+import copy
 import logging
 from datetime import datetime, timedelta, timezone
 from pprint import pformat
 
 import aiohttp
+
+_PII_RECIPIENT_FIELDS = ("firstName", "lastName", "msisdn")
+_PII_MASK = "***"
 
 
 class BlaulichtSmsSessionInitException(aiohttp.ClientError):
@@ -43,12 +47,6 @@ class BlaulichtSmsController:
 
         self._session_token: str | None = None
         self._http_session = session
-
-    def _session(self) -> aiohttp.ClientSession:
-        """Return the injected aiohttp session or create a throwaway one."""
-        if self._http_session is not None:
-            return self._http_session
-        return aiohttp.ClientSession()
 
     async def _request_json(self, method: str, url: str, **kwargs) -> dict:
         """Perform an HTTP request and return the parsed JSON body."""
@@ -113,7 +111,7 @@ class BlaulichtSmsController:
             token = await self._ensure_session()
             response_json = await self._request_json("GET", self.base_url + token)
 
-        self.logger.debug("Response body:\n%s", pformat(response_json))
+        self.logger.debug("Response body:\n%s", pformat(_redact_pii(response_json)))
         alarms = response_json.get("alarms", [])
         if self.show_infos:
             alarms = alarms + response_json.get("infos", [])
@@ -151,6 +149,20 @@ class BlaulichtSmsController:
                 return True
         self.logger.debug("No active alarm found")
         return False
+
+
+def _redact_pii(payload: dict) -> dict:
+    """Return a deep copy of an alarm payload with recipient PII masked."""
+    if not isinstance(payload, dict):
+        return payload
+    redacted = copy.deepcopy(payload)
+    for bucket in ("alarms", "infos"):
+        for item in redacted.get(bucket) or []:
+            for recipient in item.get("recipients") or []:
+                for field in _PII_RECIPIENT_FIELDS:
+                    if field in recipient:
+                        recipient[field] = _PII_MASK
+    return redacted
 
 
 def _parse_alarm_datetime(raw: str | None) -> datetime | None:

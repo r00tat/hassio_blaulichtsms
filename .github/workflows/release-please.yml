@@ -15,6 +15,28 @@ jobs:
       pull-requests: write
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - uses: actions/checkout@v6.0.2
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: "ZIP the integration directory"
+        if: ${{ steps.release.outputs.release_created }}
+        shell: "bash"
+        run: |
+          cd "$GITHUB_WORKSPACE/custom_components/blaulichtsms"
+          zip hassio_blaulichtsms.zip -r ./
+
+      - name: "Upload the ZIP file to the release"
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release upload "$TAG_NAME" \
+            "$GITHUB_WORKSPACE/custom_components/blaulichtsms/hassio_blaulichtsms.zip" \
+            --repo "$REPO"

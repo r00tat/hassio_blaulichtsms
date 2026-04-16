@@ -101,6 +101,12 @@ async def setup_blaulichtsms(
             hass,
             config.data.get(CONF_ALARM_DURATION, DEFAULT_ALARM_DURATION),
         ),
+        BlaulichtSMSNewAlarmActiveSensor(
+            coordinator,
+            hass,
+            config.data.get(CONF_NEW_ALARM_DURATION, DEFAULT_NEW_ALARM_DURATION),
+            config.data.get(CONF_TRACK_RECIPIENT),
+        ),
     ]
     async_add_entities(entities)
 

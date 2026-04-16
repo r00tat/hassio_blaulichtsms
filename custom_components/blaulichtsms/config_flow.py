@@ -116,21 +116,46 @@ class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> data_entry_flow.FlowResult:
+        """Let the user update credentials for an existing entry."""
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        assert entry is not None
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            errors = await _validate_credentials(
+                self.hass,
+                entry.data[CONF_CUSTOMER_ID],
+                user_input[CONF_USERNAME],
+                user_input[CONF_PASSWORD],
+            )
+            if not errors:
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    data={**entry.data, **user_input},
+                )
+                await self.hass.config_entries.async_reload(entry.entry_id)
+                return self.async_abort(reason="reconfigure_successful")
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=reauth_schema(entry.data),
+            errors=errors,
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Get the options flow."""
-        return OptionsFlowHandler(config_entry)
+        return OptionsFlowHandler()
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Options Flow for BlaulichtSMS."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

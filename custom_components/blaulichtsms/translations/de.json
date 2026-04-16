@@ -23,6 +23,14 @@
           "username": "Username",
           "password": "Passwort"
         }
+      },
+      "reconfigure": {
+        "title": "Blaulicht SMS Zugangsdaten ändern",
+        "description": "Aktualisiere Benutzername und Passwort für dein BlaulichtSMS Dashboard Konto.",
+        "data": {
+          "username": "Username",
+          "password": "Passwort"
+        }
       }
     },
     "error": {
@@ -31,7 +39,8 @@
     },
     "abort": {
       "already_configured": "Customer ist bereits konfiguriert",
-      "reauth_successful": "Erneute Authentifizierung erfolgreich"
+      "reauth_successful": "Erneute Authentifizierung erfolgreich",
+      "reconfigure_successful": "Zugangsdaten erfolgreich aktualisiert"
     }
   },
   "options": {

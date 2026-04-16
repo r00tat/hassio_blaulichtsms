@@ -20,7 +20,10 @@ from .constants import (
     DOMAIN,
     CONF_CUSTOMER_ID,
     CONF_ALARM_DURATION,
+    CONF_NEW_ALARM_DURATION,
+    CONF_TRACK_RECIPIENT,
     DEFAULT_ALARM_DURATION,
+    DEFAULT_NEW_ALARM_DURATION,
     VERSION,
 )
 from .schema import BLAULICHTSMS_SCHEMA
@@ -173,4 +176,85 @@ class BlaulichtSMSAlarmActiveSensor(CoordinatorEntity, BinarySensorEntity):
             model="API",
             sw_version=VERSION,
             # via_device=(DOMAIN, self.api.bridgeid),
+        )
+
+
+class BlaulichtSMSNewAlarmActiveSensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor that fires False→True whenever a fresh alarm arrives."""
+
+    def __init__(
+        self,
+        coordinator: BlaulichtSMSCoordinator,
+        hass: HomeAssistant,
+        new_alarm_duration: int,
+        track_recipient: str | None,
+    ) -> None:
+        """Create the sensor."""
+        super().__init__(coordinator, context="new-alarm-active")
+        self.hass = hass
+        self.coordinator = coordinator
+        self.blaulichtsms = self.coordinator.api
+        self._new_alarm_duration = new_alarm_duration
+        self._track_recipient = track_recipient or None
+        self._last_alarm_id = None
+        self._attr_name = "BlaulichtSMS New Alarm Active"
+        self._attr_unique_id = (
+            f"blsms-{self.blaulichtsms.customer_id}-new-alarm-active"
+        )
+        self._attr_is_on = False
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """React to a new coordinator poll."""
+        data = self.coordinator.data
+        if not data:
+            if self._attr_is_on:
+                self._attr_is_on = False
+                self.async_write_ha_state()
+            return
+
+        alarm_id = data.get("alarmId")
+        if alarm_id != self._last_alarm_id:
+            self._last_alarm_id = alarm_id
+            self._attr_is_on = False
+            self.async_write_ha_state()
+
+        target = self._evaluate_target(data)
+        if self._attr_is_on != target:
+            self._attr_is_on = target
+            self.async_write_ha_state()
+
+    def _evaluate_target(self, data: dict) -> bool:
+        """Return the intended is_on value for the given alarm payload."""
+        alarm_date_raw = data.get("alarmDate")
+        if not alarm_date_raw:
+            return False
+        alarm_date = datetime.fromisoformat(alarm_date_raw)
+        within_window = datetime.now(alarm_date.tzinfo) < alarm_date + timedelta(
+            seconds=self._new_alarm_duration
+        )
+        if not within_window:
+            return False
+
+        if self._track_recipient:
+            recipient = next(
+                (
+                    r
+                    for r in data.get("recipients", [])
+                    if r.get("msisdn") == self._track_recipient
+                ),
+                None,
+            )
+            return bool(recipient and recipient.get("participation") == "yes")
+        return True
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.blaulichtsms.customer_id)},
+            name=f"BlaulichtSMS {self.blaulichtsms.customer_id}",
+            manufacturer="BlaulichtSMS",
+            model="API",
+            sw_version=VERSION,
         )

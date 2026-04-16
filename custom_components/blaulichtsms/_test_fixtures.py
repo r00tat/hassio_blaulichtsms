@@ -3,12 +3,12 @@
 Not picked up by unittest discovery (filename does not match ``test*.py``).
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 
 def make_alarm(alarm_id="A1", minutes_ago=0, recipients=None, end_minutes_ahead=None):
     """Build a minimal alarm dict for tests."""
-    alarm_date = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
+    alarm_date = datetime.now(UTC) - timedelta(minutes=minutes_ago)
     alarm = {
         "alarmId": alarm_id,
         "alarmDate": alarm_date.isoformat(),
@@ -16,7 +16,7 @@ def make_alarm(alarm_id="A1", minutes_ago=0, recipients=None, end_minutes_ahead=
     }
     if end_minutes_ahead is not None:
         alarm["endDate"] = (
-            datetime.now(timezone.utc) + timedelta(minutes=end_minutes_ahead)
+            datetime.now(UTC) + timedelta(minutes=end_minutes_ahead)
         ).isoformat()
     return alarm
 

@@ -2,7 +2,7 @@
 
 import copy
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pprint import pformat
 
 import aiohttp
@@ -139,7 +139,7 @@ class BlaulichtSmsController:
         """Return True if any alarm is currently active."""
         self.logger.debug("Checking for active alarms...")
         alarms = await self.get_alarms()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for alarm in alarms:
             alarm_datetime = _parse_alarm_datetime(alarm.get("alarmDate"))
             if alarm_datetime is None:
@@ -174,5 +174,5 @@ def _parse_alarm_datetime(raw: str | None) -> datetime | None:
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=UTC)
     return parsed

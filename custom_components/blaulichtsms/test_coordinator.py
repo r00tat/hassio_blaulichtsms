@@ -1,7 +1,7 @@
 """Unit tests for BlaulichtSMSCoordinator."""
 
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from unittest.mock import MagicMock
 
 from ._test_fixtures import make_alarm
@@ -45,7 +45,7 @@ class TestCoordinatorIsAlarmActive(unittest.TestCase):
         coordinator = self._make_coordinator(alarm_duration_seconds=3600)
         alarm = make_alarm(minutes_ago=5)
         alarm["endDate"] = (
-            datetime.now(timezone.utc) - timedelta(minutes=1)
+            datetime.now(UTC) - timedelta(minutes=1)
         ).isoformat()
         self.assertFalse(coordinator._is_alarm_active(alarm))
 

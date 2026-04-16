@@ -1,7 +1,7 @@
 """Blaulichtsms Binary Sensors."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.sensor import PLATFORM_SCHEMA
@@ -191,7 +191,7 @@ class BlaulichtSMSNewAlarmActiveSensor(_BlaulichtSMSBinarySensorBase):
         alarm_date = _parse_alarm_datetime(alarm.get("alarmDate"))
         if alarm_date is None:
             return False
-        within_window = datetime.now(timezone.utc) < alarm_date + timedelta(
+        within_window = datetime.now(UTC) < alarm_date + timedelta(
             seconds=self._new_alarm_duration
         )
         if not within_window:

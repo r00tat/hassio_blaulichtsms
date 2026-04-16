@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import aiohttp
 
@@ -68,7 +68,7 @@ class BlaulichtSMSCoordinator(DataUpdateCoordinator):
             raise ConfigEntryAuthFailed(
                 f"Authentication with blaulichtSMS failed: {err}"
             ) from err
-        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+        except (TimeoutError, aiohttp.ClientError) as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
         return {
@@ -81,7 +81,7 @@ class BlaulichtSMSCoordinator(DataUpdateCoordinator):
         if not alarm:
             return False
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         end_date_raw = alarm.get("endDate")
         if end_date_raw:

@@ -11,6 +11,8 @@ from .constants import (
     DEFAULT_ALARM_DURATION,
     DEFAULT_SHOW_INFOS,
     CONF_TRACK_RECIPIENT,
+    CONF_NEW_ALARM_DURATION,
+    DEFAULT_NEW_ALARM_DURATION,
 )
 
 BLAULICHTSMS_SCHEMA = {
@@ -27,6 +29,11 @@ BLAULICHTSMS_SCHEMA = {
         default=DEFAULT_SHOW_INFOS,
         description="Display infos as alarm",
     ): cv.boolean,
+    vol.Optional(
+        CONF_NEW_ALARM_DURATION,
+        default=DEFAULT_NEW_ALARM_DURATION,
+        description="Window (seconds) in which a freshly arrived alarm triggers new_alarm_active",
+    ): cv.positive_int,
     vol.Optional(CONF_TRACK_RECIPIENT, description="Track recipient status"): cv.string,
 }
 
@@ -45,6 +52,11 @@ def options_schema(data: dict):
                 default=data.get(CONF_SHOW_INFOS, DEFAULT_SHOW_INFOS),
                 description="Display infos as alarm",
             ): cv.boolean,
+            vol.Optional(
+                CONF_NEW_ALARM_DURATION,
+                default=data.get(CONF_NEW_ALARM_DURATION, DEFAULT_NEW_ALARM_DURATION),
+                description="Window (seconds) in which a freshly arrived alarm triggers new_alarm_active",
+            ): cv.positive_int,
             vol.Optional(
                 CONF_TRACK_RECIPIENT,
                 default=data.get(CONF_TRACK_RECIPIENT, ""),

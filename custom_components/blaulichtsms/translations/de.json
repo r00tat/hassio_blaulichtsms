@@ -10,31 +10,80 @@
           "username": "Username",
           "password": "Passwort",
           "alarm_duration": "Alarm aktiv für Sekunden",
+          "new_alarm_duration": "Zeitfenster für neuen Alarm (Sekunden)",
           "show_infos": "Infos als Alarm anzeigen",
-          "track_recipient": "Telefonnumer des Teilnehmers für tracking"
+          "track_recipient": "Telefonnummer des Teilnehmers für tracking",
+          "scan_interval": "Abfrage-Intervall (Sekunden)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Blaulicht SMS erneut authentifizieren",
+        "description": "Passwort hat sich geändert. Bitte erneut eingeben.",
+        "data": {
+          "username": "Username",
+          "password": "Passwort"
+        }
+      },
+      "reconfigure": {
+        "title": "Blaulicht SMS Zugangsdaten ändern",
+        "description": "Aktualisiere Benutzername und Passwort für dein BlaulichtSMS Dashboard Konto.",
+        "data": {
+          "username": "Username",
+          "password": "Passwort"
         }
       }
     },
+    "error": {
+      "auth": "Authentifizierung fehlgeschlagen",
+      "cannot_connect": "Verbindung zum BlaulichtSMS Dashboard nicht möglich"
+    },
     "abort": {
       "already_configured": "Customer ist bereits konfiguriert",
-      "blsms_auth_failed": "Authentifizierung fehlgeschlagen"
+      "reauth_successful": "Erneute Authentifizierung erfolgreich",
+      "reconfigure_successful": "Zugangsdaten erfolgreich aktualisiert"
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Blaulicht SMS Setup",
-        "description": "Configure your BlaulichtSMS dashboard credentials",
+        "description": "BlaulichtSMS Dashboard Einstellungen anpassen",
         "data": {
-          "customer_id": "Customer ID",
-          "username": "Username",
-          "password": "Passwort",
           "alarm_duration": "Alarm aktiv für Sekunden",
+          "new_alarm_duration": "Zeitfenster für neuen Alarm (Sekunden)",
           "show_infos": "Infos als Alarm anzeigen",
-          "track_recipient": "Telefonnumer des Teilnehmers für tracking"
+          "track_recipient": "Telefonnummer des Teilnehmers für tracking",
+          "scan_interval": "Abfrage-Intervall (Sekunden)"
         }
       }
     },
     "abort": {}
+  },
+  "entity": {
+    "sensor": {
+      "customer_id": { "name": "Kunden-ID" },
+      "customer_name": { "name": "Kunde" },
+      "alarm_id": { "name": "Alarm-ID" },
+      "alarm_groups": { "name": "Alarmgruppen" },
+      "alarm_date": { "name": "Alarmzeit" },
+      "end_date": { "name": "Endzeit" },
+      "author_name": { "name": "Verfasser" },
+      "alarm_text": { "name": "Alarmtext" },
+      "audio_url": { "name": "Audio-URL" },
+      "users_alerted_count": { "name": "Alarmierte Nutzer" },
+      "coordinates": { "name": "Koordinaten" },
+      "recipients_yes": { "name": "Empfänger Zusage" },
+      "recipients_no": { "name": "Empfänger Absage" },
+      "recipients_pending": { "name": "Empfänger Ausstehend" },
+      "recipients_total": { "name": "Empfänger Gesamt" },
+      "confirmed_by_function": { "name": "Zusagen nach Funktion" },
+      "address": { "name": "Adresse" },
+      "track_recipient": { "name": "Verfolgter Empfänger" }
+    },
+    "binary_sensor": {
+      "alarm_active": { "name": "Alarm aktiv" },
+      "needs_acknowledgement": { "name": "Bestätigung erforderlich" },
+      "new_alarm_active": { "name": "Neuer Alarm aktiv" }
+    }
   }
 }

@@ -5,6 +5,9 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    commit-message:
+      prefix: 'fix'
+      include: 'scope'
     groups:
       dependencies:
         patterns:
@@ -14,6 +17,9 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    commit-message:
+      prefix: 'fix'
+      include: 'scope'
     ignore:
       # Dependabot should not update Home Assistant as that should match the homeassistant key in hacs.json
       - dependency-name: 'homeassistant'

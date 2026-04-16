@@ -1,12 +1,16 @@
-"""BlaulichtSMS tests."""
+"""BlaulichtSMS integration tests against the live Dashboard API.
 
-from typing import Any
-from collections.abc import Coroutine
+Gated by ``SKIP_INTEGRATION_TEST``. Unit tests live in the sibling ``test_*.py``
+modules.
+"""
+
 import asyncio
-import unittest
-import os
-import logging
 import json
+import logging
+import os
+import unittest
+from collections.abc import Coroutine
+from typing import Any
 
 from .blaulichtsms import BlaulichtSmsController
 
@@ -14,7 +18,7 @@ log = logging.getLogger("TestBlaulichtSMS")
 
 
 class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
-    """test blaulichtsms api."""
+    """Integration tests that hit the real API. Gated by SKIP_INTEGRATION_TEST."""
 
     async def asyncTearDown(self) -> Coroutine[Any, Any, None]:
         """Tear down tests."""
@@ -26,14 +30,12 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         if os.environ.get("SKIP_INTEGRATION_TEST"):
             log.info("skipping integration test: test_auth")
             return
-        log.info("tesing auth")
         blaulichtsms = BlaulichtSmsController(
             os.environ["BLAULICHTSMS_CUSTOMERID"],
             os.environ["BLAULICHTSMS_USERNAME"],
             os.environ["BLAULICHTSMS_PASSWORD"],
         )
         token = await blaulichtsms.get_session()
-        log.info("token: %s", token)
         self.assertIsNotNone(token)
 
     async def test_alarms(self):
@@ -41,7 +43,6 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         if os.environ.get("SKIP_INTEGRATION_TEST"):
             log.info("skipping integration test: test_alarms")
             return
-        log.info("fetching alarms")
         blaulichtsms = BlaulichtSmsController(
             os.environ["BLAULICHTSMS_CUSTOMERID"],
             os.environ["BLAULICHTSMS_USERNAME"],
@@ -49,7 +50,6 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         )
         alarms = await blaulichtsms.get_anonymized_alarms()
         self.assertIsNotNone(alarms)
-
         log.info("alarms %s", json.dumps(alarms))
         self.assertGreaterEqual(len(alarms), 0)
 
@@ -67,14 +67,12 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
         alarms = await blaulichtsms.get_anonymized_alarms()
         self.assertIsNotNone(alarms)
 
-        log.info("fetch last alarm")
         alarm = await blaulichtsms.get_last_alarm()
 
         if len(alarms) == 0:
             self.assertIsNone(alarm)
         else:
             self.assertIsNotNone(alarm)
-            log.info("alarm %s on %s", alarm.get("alarmText"), alarm.get("alarmDate"))
 
 
 if __name__ == "__main__":

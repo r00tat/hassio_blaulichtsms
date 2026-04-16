@@ -10,6 +10,7 @@
           "username": "Username",
           "password": "Password",
           "alarm_duration": "Alarm duration to show as active (seconds)",
+          "new_alarm_duration": "New alarm window (seconds)",
           "show_infos": "Display infos as alarm",
           "track_recipient": "Phone number of recepient to track"
         }
@@ -30,6 +31,7 @@
           "username": "Username",
           "password": "Password",
           "alarm_duration": "Alarm duration to show as active (seconds)",
+          "new_alarm_duration": "New alarm window (seconds)",
           "show_infos": "Display infos as alarm",
           "track_recipient": "Phone number of recepient to track"
         }

@@ -10,6 +10,7 @@
           "username": "Username",
           "password": "Passwort",
           "alarm_duration": "Alarm aktiv für Sekunden",
+          "new_alarm_duration": "Zeitfenster für neuen Alarm (Sekunden)",
           "show_infos": "Infos als Alarm anzeigen",
           "track_recipient": "Telefonnumer des Teilnehmers für tracking"
         }
@@ -30,6 +31,7 @@
           "username": "Username",
           "password": "Passwort",
           "alarm_duration": "Alarm aktiv für Sekunden",
+          "new_alarm_duration": "Zeitfenster für neuen Alarm (Sekunden)",
           "show_infos": "Infos als Alarm anzeigen",
           "track_recipient": "Telefonnumer des Teilnehmers für tracking"
         }

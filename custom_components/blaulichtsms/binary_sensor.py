@@ -70,6 +70,7 @@ async def setup_blaulichtsms(
 
     entities = [
         BlaulichtSMSAlarmActiveSensor(coordinator),
+        BlaulichtSMSNeedsAcknowledgementSensor(coordinator),
         BlaulichtSMSNewAlarmActiveSensor(
             coordinator, new_alarm_duration, track_recipient or None
         ),
@@ -108,6 +109,30 @@ class BlaulichtSMSAlarmActiveSensor(_BlaulichtSMSBinarySensorBase):
     def _derive_is_on(self) -> bool:
         data = self.coordinator.data
         return bool(data and data.get("is_active"))
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self._attr_is_on = self._derive_is_on()
+        self.async_write_ha_state()
+
+
+class BlaulichtSMSNeedsAcknowledgementSensor(_BlaulichtSMSBinarySensorBase):
+    """Binary sensor indicating whether the current alarm needs acknowledgement."""
+
+    def __init__(self, coordinator: BlaulichtSMSCoordinator) -> None:
+        """Create the sensor."""
+        super().__init__(coordinator, context="needs-acknowledgement")
+        customer_id = coordinator.api.customer_id
+        self._attr_name = "BlaulichtSMS Needs Acknowledgement"
+        self._attr_unique_id = f"blsms-{customer_id}-needs-acknowledgement"
+        self._attr_is_on = self._derive_is_on()
+
+    def _derive_is_on(self) -> bool:
+        """Return True when the current alarm requires acknowledgement."""
+        data = self.coordinator.data
+        alarm = data.get("alarm") if data else None
+        return bool(alarm and alarm.get("needsAcknowledgement"))
 
     @callback
     def _handle_coordinator_update(self) -> None:

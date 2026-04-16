@@ -29,6 +29,64 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(BLAULICHTSMS_SCHEMA)
 _LOGGER = logging.getLogger(__name__)
 
 
+def count_by_participation(recipients: list[dict] | None) -> dict[str, int]:
+    """Count recipients by participation status.
+
+    Returns a dict with keys yes/no/pending/total. Unknown statuses are counted
+    only in total, so yes+no+pending <= total.
+    """
+    counts = {"yes": 0, "no": 0, "pending": 0, "total": 0}
+    for r in recipients or []:
+        counts["total"] += 1
+        status = r.get("participation")
+        if status in counts:
+            counts[status] += 1
+    return counts
+
+
+def confirmed_by_function(recipients: list[dict] | None) -> list[dict]:
+    """Aggregate recipients per function, keeping only functions actually seen.
+
+    Returned list is sorted by each function's `order` field. Each entry carries
+    the function metadata (id, name, shortForm, colors) plus yes/no/pending/total
+    counts of recipients holding that function.
+    """
+    buckets: dict[str, dict] = {}
+    for recipient in recipients or []:
+        status = recipient.get("participation")
+        for fn in recipient.get("functions") or []:
+            fn_id = fn.get("functionId")
+            if fn_id is None:
+                continue
+            entry = buckets.get(fn_id)
+            if entry is None:
+                entry = {
+                    "functionId": fn_id,
+                    "name": fn.get("name"),
+                    "shortForm": fn.get("shortForm"),
+                    "order": fn.get("order", 0),
+                    "backgroundColor": fn.get("backgroundHexColorCode"),
+                    "foregroundColor": fn.get("foregroundHexColorCode"),
+                    "yes": 0,
+                    "no": 0,
+                    "pending": 0,
+                    "total": 0,
+                }
+                buckets[fn_id] = entry
+            entry["total"] += 1
+            if status in ("yes", "no", "pending"):
+                entry[status] += 1
+    return sorted(buckets.values(), key=lambda e: (e["order"], e["shortForm"] or ""))
+
+
+def get_address(alarm: dict | None) -> str | None:
+    """Return the street address from alarm.geolocation.address, or None."""
+    if not alarm:
+        return None
+    geo = alarm.get("geolocation") or {}
+    return geo.get("address")
+
+
 SENSOR_FIELDS = [
     "customerId",
     "customerName",
@@ -41,6 +99,18 @@ SENSOR_FIELDS = [
     "audioUrl",
     "usersAlertedCount",
     "coordinates",
+]
+
+RECIPIENT_COUNT_FIELDS = [
+    "recipients_yes",
+    "recipients_no",
+    "recipients_pending",
+    "recipients_total",
+]
+
+DERIVED_FIELDS = [
+    "confirmed_by_function",
+    "address",
 ]
 
 
@@ -88,7 +158,7 @@ async def setup_blaulichtsms(
 
     entities = [
         BlaulichtSMSEntity(coordinator, attribute, config)
-        for attribute in SENSOR_FIELDS
+        for attribute in SENSOR_FIELDS + RECIPIENT_COUNT_FIELDS + DERIVED_FIELDS
     ]
     if config.data.get(CONF_TRACK_RECIPIENT):
         entities.append(BlaulichtSMSEntity(coordinator, CONF_TRACK_RECIPIENT, config))
@@ -147,11 +217,24 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
         new_value = alarm.get(self.attribute)
         _LOGGER.debug("coordinator update for %s: %s", self.attribute, new_value)
 
-        if self.attribute == "recipients":
-            self._attr_native_value = len(
-                [r for r in (new_value or []) if r.get("participation") == "yes"]
-            )
-        elif self._is_date:
+        if self.attribute.startswith("recipients_"):
+            key = self.attribute.removeprefix("recipients_")
+            self._attr_native_value = count_by_participation(
+                alarm.get("recipients")
+            )[key]
+            return
+
+        if self.attribute == "confirmed_by_function":
+            functions = confirmed_by_function(alarm.get("recipients"))
+            self._attr_native_value = len(functions)
+            self._attr_extra_state_attributes = {"functions": functions}
+            return
+
+        if self.attribute == "address":
+            self._attr_native_value = get_address(alarm)
+            return
+
+        if self._is_date:
             self._attr_native_value = (
                 datetime.fromisoformat(new_value) if new_value else None
             )

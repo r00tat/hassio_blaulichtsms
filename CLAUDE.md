@@ -14,12 +14,21 @@ Run python entry points via `uv run` — do not activate the venv manually. Exam
 
 ```bash
 uv run python -m ruff check                         # lint
-uv run python -m unittest discover -v               # run all tests
-uv run python -m unittest custom_components.blaulichtsms.test_blaulichtsms.TestNewAlarmActiveSensor -v
-uv run python -m unittest custom_components.blaulichtsms.test_blaulichtsms.TestNewAlarmActiveSensor.test_new_alarm_forces_false_then_true
+uv run python -m unittest discover -v               # run all tests (from repo root)
+uv run python -m unittest discover -s custom_components/blaulichtsms -t . -v  # same, with explicit start dir — -t must point at the repo root so the package resolves
+uv run python -m unittest custom_components.blaulichtsms.test_binary_sensor.TestNewAlarmActiveSensor -v
+uv run python -m unittest custom_components.blaulichtsms.test_binary_sensor.TestNewAlarmActiveSensor.test_new_alarm_forces_false_then_true
 ```
 
-The three `TestBlaulichtsms` tests hit the live API and are skipped when `SKIP_INTEGRATION_TEST=true` (CI sets this). `TestNewAlarmActiveSensor` has no network dependency and always runs.
+Tests are split by module:
+
+- `test_blaulichtsms.py` — `TestBlaulichtsms` integration tests that hit the live API; skipped when `SKIP_INTEGRATION_TEST=true` (CI sets this).
+- `test_binary_sensor.py` — unit tests for the binary sensors (`TestNewAlarmActiveSensor`, `TestAlarmActiveSensor`, `TestNeedsAcknowledgementSensor`).
+- `test_coordinator.py` — `TestCoordinatorIsAlarmActive` for `BlaulichtSMSCoordinator._is_alarm_active`.
+- `test_sensor.py` — `TestSensorEntity` and `TestAlarmHelpers` for the generic entity and pure helpers.
+- `_test_fixtures.py` — shared `make_alarm` / `wrap` helpers (not a test module; does not match unittest discovery).
+
+All non-integration tests have no network dependency and always run.
 
 `./dev.sh` restarts the `homeassistant` Docker container after syncing the component; use it to exercise changes against a real Home Assistant.
 

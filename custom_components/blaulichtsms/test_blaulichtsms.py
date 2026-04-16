@@ -2,6 +2,8 @@
 
 from typing import Any
 from collections.abc import Coroutine
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
 import asyncio
 import unittest
 import os
@@ -77,10 +79,6 @@ class TestBlaulichtsms(unittest.IsolatedAsyncioTestCase):
             log.info("alarm %s on %s", alarm.get("alarmText"), alarm.get("alarmDate"))
 
 
-from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
-
-
 def _make_alarm(alarm_id="A1", minutes_ago=0, recipients=None):
     """Build a minimal alarm dict for tests."""
     alarm_date = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
@@ -113,16 +111,19 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         return sensor, coordinator
 
     def test_evaluate_target_within_window_no_track(self):
+        """Fresh alarm without track_recipient returns True."""
         sensor, _ = self._make_sensor()
         alarm = _make_alarm(minutes_ago=1)
         self.assertTrue(sensor._evaluate_target(alarm))
 
     def test_evaluate_target_outside_window_no_track(self):
+        """Alarm older than the window returns False."""
         sensor, _ = self._make_sensor()
         alarm = _make_alarm(minutes_ago=10)
         self.assertFalse(sensor._evaluate_target(alarm))
 
     def test_evaluate_target_track_recipient_yes(self):
+        """Tracked recipient with participation=yes returns True."""
         sensor, _ = self._make_sensor(track_recipient="+4312345")
         alarm = _make_alarm(
             minutes_ago=1,
@@ -131,6 +132,7 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertTrue(sensor._evaluate_target(alarm))
 
     def test_evaluate_target_track_recipient_no_confirmation(self):
+        """Tracked recipient without yes returns False."""
         sensor, _ = self._make_sensor(track_recipient="+4312345")
         alarm = _make_alarm(
             minutes_ago=1,
@@ -139,11 +141,13 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertFalse(sensor._evaluate_target(alarm))
 
     def test_evaluate_target_track_recipient_missing(self):
+        """Tracked recipient not in list returns False."""
         sensor, _ = self._make_sensor(track_recipient="+4312345")
         alarm = _make_alarm(minutes_ago=1, recipients=[])
         self.assertFalse(sensor._evaluate_target(alarm))
 
     def test_evaluate_target_track_recipient_yes_but_expired(self):
+        """Late confirmation after window expired stays False."""
         sensor, _ = self._make_sensor(track_recipient="+4312345")
         alarm = _make_alarm(
             minutes_ago=10,
@@ -152,8 +156,8 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertFalse(sensor._evaluate_target(alarm))
 
     def test_new_alarm_forces_false_then_true(self):
+        """A new alarm id triggers two state writes in one cycle."""
         sensor, coordinator = self._make_sensor()
-        # Simulate prior state: was True from a previous alarm
         sensor._attr_is_on = True
         sensor._last_alarm_id = "OLD"
         coordinator.data = _make_alarm(alarm_id="NEW", minutes_ago=1)
@@ -161,15 +165,12 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         sensor._handle_coordinator_update()
 
         calls = sensor.async_write_ha_state.call_args_list
-        # Expect two writes: first with is_on False, second with is_on True.
         self.assertEqual(len(calls), 2)
-        # We inspect the is_on value captured at each call time.
-        # Since async_write_ha_state is called synchronously inside _handle_coordinator_update,
-        # we capture is_on via side_effect in a dedicated test below.
         self.assertTrue(sensor._attr_is_on)
         self.assertEqual(sensor._last_alarm_id, "NEW")
 
     def test_new_alarm_writes_false_before_true(self):
+        """The forced False write happens before the True write."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = True
         sensor._last_alarm_id = "OLD"
@@ -185,6 +186,7 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         self.assertEqual(captured, [False, True])
 
     def test_same_alarm_stable_no_extra_false_write(self):
+        """Unchanged alarm id does not produce spurious writes."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = True
         sensor._last_alarm_id = "SAME"
@@ -192,11 +194,11 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
 
         sensor._handle_coordinator_update()
 
-        # No state change: no write.
         sensor.async_write_ha_state.assert_not_called()
         self.assertTrue(sensor._attr_is_on)
 
     def test_new_alarm_outside_window_stays_false(self):
+        """New alarm outside the window emits only the forced False."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = False
         sensor._last_alarm_id = None
@@ -209,13 +211,12 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
 
         sensor._handle_coordinator_update()
 
-        # One forced False write on new-alarm detection; no flip to True.
         self.assertEqual(captured, [False])
         self.assertFalse(sensor._attr_is_on)
 
     def test_late_confirmation_flips_to_true(self):
+        """A later confirmation on the same alarm flips to True."""
         sensor, coordinator = self._make_sensor(track_recipient="+4312345")
-        # Initial poll: alarm present, no confirmation yet.
         coordinator.data = _make_alarm(
             alarm_id="NEW",
             minutes_ago=1,
@@ -224,7 +225,6 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         sensor._handle_coordinator_update()
         self.assertFalse(sensor._attr_is_on)
 
-        # Next poll: same alarm, now confirmed.
         coordinator.data = _make_alarm(
             alarm_id="NEW",
             minutes_ago=2,
@@ -237,6 +237,7 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
         sensor.async_write_ha_state.assert_called_once()
 
     def test_no_data_stays_off(self):
+        """Missing coordinator data turns a True sensor off with one write."""
         sensor, coordinator = self._make_sensor()
         sensor._attr_is_on = True
         coordinator.data = None

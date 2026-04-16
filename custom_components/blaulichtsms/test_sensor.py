@@ -161,6 +161,102 @@ class TestSensorEntity(unittest.TestCase):
         self.assertIsNone(sensor._attr_native_value)
 
 
+class TestSensorIconsAndNames(unittest.TestCase):
+    """Verify icons, German display names and stable entity_id slug."""
+
+    def _make_sensor(self, attribute, config_data=None):
+        from .sensor import BlaulichtSMSEntity
+
+        coordinator = MagicMock()
+        coordinator.data = None
+        coordinator.api = MagicMock()
+        coordinator.api.customer_id = "cust-1"
+        config = MagicMock()
+        config.data = config_data or {}
+        return BlaulichtSMSEntity(coordinator, attribute, config)
+
+    def test_every_configured_attribute_has_icon_and_name(self):
+        """SENSOR_ICONS and SENSOR_NAMES cover every exposed attribute."""
+        from .constants import CONF_TRACK_RECIPIENT
+        from .sensor import (
+            DERIVED_FIELDS,
+            RECIPIENT_COUNT_FIELDS,
+            SENSOR_FIELDS,
+            SENSOR_ICONS,
+            SENSOR_NAMES,
+        )
+
+        expected = set(
+            SENSOR_FIELDS + RECIPIENT_COUNT_FIELDS + DERIVED_FIELDS
+        ) | {CONF_TRACK_RECIPIENT}
+        self.assertTrue(expected.issubset(SENSOR_ICONS.keys()))
+        self.assertTrue(expected.issubset(SENSOR_NAMES.keys()))
+
+    def test_icon_assigned_from_mapping(self):
+        """Constructor assigns _attr_icon from SENSOR_ICONS."""
+        from .sensor import SENSOR_ICONS
+
+        for attribute, icon in SENSOR_ICONS.items():
+            sensor = self._make_sensor(
+                attribute, config_data={attribute: "+4399"}
+            )
+            self.assertEqual(sensor._attr_icon, icon, attribute)
+
+    def test_display_name_uses_german_label(self):
+        """Display name embeds the German label, not the raw attribute key."""
+        sensor = self._make_sensor("alarmText")
+        self.assertEqual(sensor._attr_name, "BlaulichtSMS Alarmtext")
+
+    def test_display_name_for_recipient_counts(self):
+        """Recipient counts use German labels."""
+        sensor_yes = self._make_sensor("recipients_yes")
+        self.assertEqual(sensor_yes._attr_name, "BlaulichtSMS Empfänger Zusage")
+        sensor_total = self._make_sensor("recipients_total")
+        self.assertEqual(sensor_total._attr_name, "BlaulichtSMS Empfänger Gesamt")
+
+    def test_display_name_for_tracked_recipient(self):
+        """track_recipient uses the German label."""
+        from .constants import CONF_TRACK_RECIPIENT
+
+        sensor = self._make_sensor(
+            CONF_TRACK_RECIPIENT, config_data={CONF_TRACK_RECIPIENT: "+4399"}
+        )
+        self.assertEqual(sensor._attr_name, "BlaulichtSMS Verfolgter Empfänger")
+
+    def test_unique_id_preserves_attribute_key(self):
+        """unique_id keeps the raw attribute key so existing entities survive."""
+        sensor = self._make_sensor("alarmText")
+        self.assertEqual(sensor._attr_unique_id, "blsms-cust-1-alarmText")
+
+        sensor_recipients = self._make_sensor("recipients_yes")
+        self.assertEqual(
+            sensor_recipients._attr_unique_id, "blsms-cust-1-recipients_yes"
+        )
+
+    def test_suggested_object_id_preserves_old_slug(self):
+        """suggested_object_id mirrors the pre-rename entity_id for new installs."""
+        self.assertEqual(
+            self._make_sensor("alarmText").suggested_object_id,
+            "blaulichtsms_alarmtext",
+        )
+        self.assertEqual(
+            self._make_sensor("recipients_yes").suggested_object_id,
+            "blaulichtsms_recipients_yes",
+        )
+        self.assertEqual(
+            self._make_sensor("customerId").suggested_object_id,
+            "blaulichtsms_customerid",
+        )
+
+    def test_unknown_attribute_has_no_icon(self):
+        """Attributes without a mapped icon leave _attr_icon unset."""
+        sensor = self._make_sensor("authorName")
+        self.assertEqual(sensor._attr_icon, "mdi:account-edit")
+
+        sensor_unknown = self._make_sensor("nonExistent")
+        self.assertFalse(getattr(sensor_unknown, "_attr_icon", None))
+
+
 class TestAlarmHelpers(unittest.TestCase):
     """Pure compute helpers used by sensor entities."""
 

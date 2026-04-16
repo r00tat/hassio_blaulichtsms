@@ -259,5 +259,110 @@ class TestNeedsAcknowledgementSensor(unittest.TestCase):
         self.assertFalse(sensor._attr_is_on)
 
 
+class TestBinarySensorIcons(unittest.TestCase):
+    """Verify icons, German names and stable entity_id slug on binary sensors."""
+
+    def _coordinator(self):
+        coordinator = MagicMock()
+        coordinator.data = None
+        coordinator.api = MagicMock()
+        coordinator.api.customer_id = "cust-1"
+        return coordinator
+
+    def test_alarm_active_sensor_icon(self):
+        """AlarmActive uses an alarm-light icon."""
+        from .binary_sensor import BlaulichtSMSAlarmActiveSensor
+
+        sensor = BlaulichtSMSAlarmActiveSensor(self._coordinator())
+        self.assertEqual(sensor._attr_icon, "mdi:alarm-light")
+
+    def test_needs_acknowledgement_icon(self):
+        """NeedsAcknowledgement uses a bell-alert outline icon."""
+        from .binary_sensor import BlaulichtSMSNeedsAcknowledgementSensor
+
+        sensor = BlaulichtSMSNeedsAcknowledgementSensor(self._coordinator())
+        self.assertEqual(sensor._attr_icon, "mdi:bell-alert-outline")
+
+    def test_new_alarm_active_icon(self):
+        """NewAlarmActive uses a bell-alert icon."""
+        from .binary_sensor import BlaulichtSMSNewAlarmActiveSensor
+
+        sensor = BlaulichtSMSNewAlarmActiveSensor(self._coordinator(), 300, None)
+        self.assertEqual(sensor._attr_icon, "mdi:bell-alert")
+
+    def test_german_display_names(self):
+        """Binary sensors expose German display names."""
+        from .binary_sensor import (
+            BlaulichtSMSAlarmActiveSensor,
+            BlaulichtSMSNeedsAcknowledgementSensor,
+            BlaulichtSMSNewAlarmActiveSensor,
+        )
+
+        self.assertEqual(
+            BlaulichtSMSAlarmActiveSensor(self._coordinator())._attr_name,
+            "BlaulichtSMS Alarm aktiv",
+        )
+        self.assertEqual(
+            BlaulichtSMSNeedsAcknowledgementSensor(self._coordinator())._attr_name,
+            "BlaulichtSMS Bestätigung erforderlich",
+        )
+        self.assertEqual(
+            BlaulichtSMSNewAlarmActiveSensor(
+                self._coordinator(), 300, None
+            )._attr_name,
+            "BlaulichtSMS Neuer Alarm aktiv",
+        )
+
+    def test_suggested_object_id_preserves_old_slug(self):
+        """suggested_object_id matches the pre-rename entity_id for new installs."""
+        from .binary_sensor import (
+            BlaulichtSMSAlarmActiveSensor,
+            BlaulichtSMSNeedsAcknowledgementSensor,
+            BlaulichtSMSNewAlarmActiveSensor,
+        )
+
+        self.assertEqual(
+            BlaulichtSMSAlarmActiveSensor(self._coordinator()).suggested_object_id,
+            "blaulichtsms_alarm_active",
+        )
+        self.assertEqual(
+            BlaulichtSMSNeedsAcknowledgementSensor(
+                self._coordinator()
+            ).suggested_object_id,
+            "blaulichtsms_needs_acknowledgement",
+        )
+        self.assertEqual(
+            BlaulichtSMSNewAlarmActiveSensor(
+                self._coordinator(), 300, None
+            ).suggested_object_id,
+            "blaulichtsms_new_alarm_active",
+        )
+
+    def test_unique_id_preserved(self):
+        """unique_id keeps the stable blsms-{customer_id}-{key} format."""
+        from .binary_sensor import (
+            BlaulichtSMSAlarmActiveSensor,
+            BlaulichtSMSNeedsAcknowledgementSensor,
+            BlaulichtSMSNewAlarmActiveSensor,
+        )
+
+        self.assertEqual(
+            BlaulichtSMSAlarmActiveSensor(self._coordinator())._attr_unique_id,
+            "blsms-cust-1-alarm-active",
+        )
+        self.assertEqual(
+            BlaulichtSMSNeedsAcknowledgementSensor(
+                self._coordinator()
+            )._attr_unique_id,
+            "blsms-cust-1-needs-acknowledgement",
+        )
+        self.assertEqual(
+            BlaulichtSMSNewAlarmActiveSensor(
+                self._coordinator(), 300, None
+            )._attr_unique_id,
+            "blsms-cust-1-new-alarm-active",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

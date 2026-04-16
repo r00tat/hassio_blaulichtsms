@@ -113,6 +113,48 @@ DERIVED_FIELDS = [
     "address",
 ]
 
+SENSOR_ICONS = {
+    "customerId": "mdi:identifier",
+    "customerName": "mdi:domain",
+    "alarmId": "mdi:pound",
+    "alarmGroups": "mdi:account-group",
+    "alarmDate": "mdi:clock-start",
+    "endDate": "mdi:clock-end",
+    "authorName": "mdi:account-edit",
+    "alarmText": "mdi:message-alert",
+    "audioUrl": "mdi:volume-high",
+    "usersAlertedCount": "mdi:account-multiple",
+    "coordinates": "mdi:map-marker",
+    "recipients_yes": "mdi:account-check",
+    "recipients_no": "mdi:account-cancel",
+    "recipients_pending": "mdi:account-clock",
+    "recipients_total": "mdi:account-multiple",
+    "confirmed_by_function": "mdi:badge-account-horizontal",
+    "address": "mdi:map-marker",
+    CONF_TRACK_RECIPIENT: "mdi:cellphone-check",
+}
+
+SENSOR_NAMES = {
+    "customerId": "Kunden-ID",
+    "customerName": "Kunde",
+    "alarmId": "Alarm-ID",
+    "alarmGroups": "Alarmgruppen",
+    "alarmDate": "Alarmzeit",
+    "endDate": "Endzeit",
+    "authorName": "Verfasser",
+    "alarmText": "Alarmtext",
+    "audioUrl": "Audio-URL",
+    "usersAlertedCount": "Alarmierte Nutzer",
+    "coordinates": "Koordinaten",
+    "recipients_yes": "Empfänger Zusage",
+    "recipients_no": "Empfänger Absage",
+    "recipients_pending": "Empfänger Ausstehend",
+    "recipients_total": "Empfänger Gesamt",
+    "confirmed_by_function": "Zusagen nach Funktion",
+    "address": "Adresse",
+    CONF_TRACK_RECIPIENT: "Verfolgter Empfänger",
+}
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -180,11 +222,16 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator, context=attribute)
         self.blaulichtsms = coordinator.api
         self.attribute = attribute
-        self._attr_name = f"BlaulichtSMS {self.attribute}"
+        friendly = SENSOR_NAMES.get(self.attribute, self.attribute)
+        self._attr_name = f"BlaulichtSMS {friendly}"
         self._attr_unique_id = f"blsms-{self.blaulichtsms.customer_id}-{self.attribute}"
         self._is_date = self.attribute.lower().endswith("date")
         if self._is_date:
             self._attr_device_class = SensorDeviceClass.TIMESTAMP
+
+        icon = SENSOR_ICONS.get(self.attribute)
+        if icon:
+            self._attr_icon = icon
 
         self._config = config
 
@@ -275,6 +322,11 @@ class BlaulichtSMSEntity(CoordinatorEntity, SensorEntity):
         extra_attributes["latitude"] = coordinates.get("lat")
         extra_attributes["longitude"] = coordinates.get("lon")
         self._attr_extra_state_attributes = extra_attributes
+
+    @property
+    def suggested_object_id(self) -> str:
+        """Preserve the pre-rename entity_id for fresh installations."""
+        return f"blaulichtsms_{self.attribute.lower()}"
 
     @property
     def device_info(self) -> DeviceInfo:

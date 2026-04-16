@@ -51,6 +51,17 @@ Data flow: config entry → `BlaulichtSMSCoordinator.get_coordinator` (singleton
 ## Conventions
 
 - Ruff config is in [.ruff.toml](.ruff.toml) (target `py310`, line length 88, Home Assistant rule set). Run ruff and fix warnings before committing.
-- Version source of truth is [manifest.json](custom_components/blaulichtsms/manifest.json) `version`. `VERSION` in [constants.py](custom_components/blaulichtsms/constants.py) is read from it at import time — do not duplicate the value. The [.github/workflows/release.yml](.github/workflows/release.yml) workflow rewrites `manifest.json` to the release tag when a GitHub Release is published and uploads a ZIP asset, but it does not commit the bump back — update `manifest.json` in `main` manually when cutting a release.
+- Version source of truth is [manifest.json](custom_components/blaulichtsms/manifest.json) `version`. `VERSION` in [constants.py](custom_components/blaulichtsms/constants.py) is read from it at import time — do not duplicate the value.
 - User-facing strings are in [strings.json](custom_components/blaulichtsms/strings.json) plus German/English translations in [translations/](custom_components/blaulichtsms/translations/). New `CONF_*` options require entries in all three.
 - The integration is loaded as a package (`custom_components.blaulichtsms.…`) so tests and imports use the full dotted path. Avoid relative scripts outside that package.
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `build:`, `style:`, `perf:`, `revert:`, optional scope like `feat(blaulichtsms):`). Dependabot is configured to emit `fix(deps): …` so dependency updates trigger patch releases.
+
+## Release Process
+
+Releases are automated via [release-please](https://github.com/googleapis/release-please):
+
+1. Every push to `main` triggers [.github/workflows/release-please.yml](.github/workflows/release-please.yml). The action keeps a single open release PR (titled `chore(main): release X.Y.Z`) that bumps `manifest.json`, updates [CHANGELOG.md](CHANGELOG.md), and derives the next version from Conventional Commits (`feat` → minor, `fix`/`perf`/`refactor` → patch, `!` or `BREAKING CHANGE` → major).
+2. Merging the release PR creates the git tag and GitHub Release with the generated notes. HACS reads the release body as the update changelog.
+3. [.github/workflows/release.yml](.github/workflows/release.yml) fires on `release: published`, zips `custom_components/blaulichtsms/`, and attaches the archive to the release for HACS to download.
+
+Do __not__ hand-edit `CHANGELOG.md`, `manifest.json` `version`, or `.release-please-manifest.json` — release-please owns all three. If they drift (as happened once before this automation), fix it in a single `chore:` commit.

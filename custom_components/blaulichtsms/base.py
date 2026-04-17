@@ -25,7 +25,7 @@ class BlaulichtSMSBaseEntity(CoordinatorEntity):
         customer_id = coordinator.api.customer_id
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, customer_id)},
-            name=f"BlaulichtSMS {customer_id}",
+            name="BLSMS",
             manufacturer="BlaulichtSMS",
             model="API",
             sw_version=VERSION,

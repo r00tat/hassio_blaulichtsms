@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/r00tat/hassio_blaulichtsms/compare/0.4.1...0.5.0) (2026-04-17)
+
+
+### Features
+
+* shorten device name to BLSMS ([#127](https://github.com/r00tat/hassio_blaulichtsms/issues/127)) ([46f64f1](https://github.com/r00tat/hassio_blaulichtsms/commit/46f64f12be8eaf557c74f0e8dd155a62d018aff1))
+
 ## [0.4.1](https://github.com/r00tat/hassio_blaulichtsms/compare/0.4.0...0.4.1) (2026-04-16)
 
 

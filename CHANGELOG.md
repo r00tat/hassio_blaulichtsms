@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.1](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.0...0.5.1) (2026-05-25)
+
+
+### Bug Fixes
+
+* **deps:** bump googleapis/release-please-action ([49cd3dd](https://github.com/r00tat/hassio_blaulichtsms/commit/49cd3dd9664a4f9f4d0c23b18b7abd3682b8e5bb))
+* **deps:** bump googleapis/release-please-action from 4 to 5 in the dependencies group ([fc1df08](https://github.com/r00tat/hassio_blaulichtsms/commit/fc1df08ad9b1beb9794d48fe70aea7c0ea74bd2e))
+* **deps:** bump the dependencies group across 1 directory with 5 updates ([1a14f6e](https://github.com/r00tat/hassio_blaulichtsms/commit/1a14f6e8af31755692e3fe827c7a277e3adc3593))
+* **deps:** bump the dependencies group across 1 directory with 5 updates ([0498237](https://github.com/r00tat/hassio_blaulichtsms/commit/04982370dcfe5e421bf1309520203c4afd02378a))
+
 ## [0.5.0](https://github.com/r00tat/hassio_blaulichtsms/compare/0.4.1...0.5.0) (2026-04-17)
 
 

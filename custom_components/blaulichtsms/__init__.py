@@ -2,29 +2,22 @@
 
 import logging
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .constants import CONF_CUSTOMER_ID, DOMAIN, PLATFORMS
-from .coordinator import BlaulichtSMSCoordinator
+from .constants import CONF_CUSTOMER_ID, PLATFORMS
+from .coordinator import BlaulichtSMSConfigEntry, BlaulichtSMSCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up blaulichtsms component."""
-    hass.data.setdefault(DOMAIN, {})
-    _LOGGER.info("loading %s completed.", DOMAIN)
-    return True
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: BlaulichtSMSConfigEntry
+) -> bool:
     """Set up from a config entry."""
     customer_id = entry.data[CONF_CUSTOMER_ID]
     _LOGGER.info("setup entry %s", customer_id)
 
-    coordinator = await BlaulichtSMSCoordinator.get_coordinator(hass, entry)
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = await BlaulichtSMSCoordinator.async_create(hass, entry)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -32,14 +25,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(
+    hass: HomeAssistant, entry: BlaulichtSMSConfigEntry
+) -> bool:
     """Unload a config entry."""
-    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unloaded:
-        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
-    return unloaded
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload the integration when options change."""
+async def _async_update_listener(
+    hass: HomeAssistant, entry: BlaulichtSMSConfigEntry
+) -> None:
+    """Reload the integration when data or options change."""
     await hass.config_entries.async_reload(entry.entry_id)

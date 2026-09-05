@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from homeassistant.helpers.sensor import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .constants import DOMAIN, VERSION

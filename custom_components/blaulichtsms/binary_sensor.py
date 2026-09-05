@@ -4,10 +4,8 @@ import logging
 from datetime import datetime, timedelta, UTC
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .base import BlaulichtSMSBaseEntity
 from .blaulichtsms import _parse_alarm_datetime
@@ -17,64 +15,40 @@ from .constants import (
     CONF_TRACK_RECIPIENT,
     DEFAULT_NEW_ALARM_DURATION,
 )
-from .coordinator import BlaulichtSMSCoordinator
-from .schema import BLAULICHTSMS_SCHEMA
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(BLAULICHTSMS_SCHEMA)
+from .coordinator import BlaulichtSMSConfigEntry, BlaulichtSMSCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,
-) -> bool:
-    """Set up a config entry."""
+    entry: BlaulichtSMSConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up the blaulichtsms binary sensors for a config entry."""
     _LOGGER.info(
         "setup of blaulichtsms binary_sensor entry: %s",
         entry.data.get(CONF_CUSTOMER_ID),
     )
-    return await setup_blaulichtsms(hass, entry, async_add_entities, discovery_info)
+    coordinator = entry.runtime_data
 
-
-async def async_setup_platform(
-    hass: HomeAssistant,
-    config: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,
-) -> bool:
-    """Set up platform."""
-    return await setup_blaulichtsms(hass, config, async_add_entities, discovery_info)
-
-
-async def setup_blaulichtsms(
-    hass: HomeAssistant,
-    config: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,
-) -> bool:
-    """Set up blaulichtsms binary sensors."""
-    coordinator = await BlaulichtSMSCoordinator.get_coordinator(hass, config)
-
-    new_alarm_duration = config.options.get(
+    new_alarm_duration = entry.options.get(
         CONF_NEW_ALARM_DURATION,
-        config.data.get(CONF_NEW_ALARM_DURATION, DEFAULT_NEW_ALARM_DURATION),
+        entry.data.get(CONF_NEW_ALARM_DURATION, DEFAULT_NEW_ALARM_DURATION),
     )
-    track_recipient = config.options.get(
-        CONF_TRACK_RECIPIENT, config.data.get(CONF_TRACK_RECIPIENT)
+    track_recipient = entry.options.get(
+        CONF_TRACK_RECIPIENT, entry.data.get(CONF_TRACK_RECIPIENT)
     )
 
-    entities = [
-        BlaulichtSMSAlarmActiveSensor(coordinator),
-        BlaulichtSMSNeedsAcknowledgementSensor(coordinator),
-        BlaulichtSMSNewAlarmActiveSensor(
-            coordinator, new_alarm_duration, track_recipient or None
-        ),
-    ]
-    async_add_entities(entities)
-    return True
+    async_add_entities(
+        [
+            BlaulichtSMSAlarmActiveSensor(coordinator),
+            BlaulichtSMSNeedsAcknowledgementSensor(coordinator),
+            BlaulichtSMSNewAlarmActiveSensor(
+                coordinator, new_alarm_duration, track_recipient or None
+            ),
+        ]
+    )
 
 
 class _BlaulichtSMSBinarySensorBase(BlaulichtSMSBaseEntity, BinarySensorEntity):

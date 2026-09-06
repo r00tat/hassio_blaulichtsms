@@ -7,6 +7,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import MAX_LENGTH_STATE_STATE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -245,7 +246,16 @@ class BlaulichtSMSEntity(BlaulichtSMSBaseEntity, SensorEntity):
         if self._is_date:
             self._attr_native_value = _parse_alarm_datetime(new_value)
         elif self.attribute == "alarmText":
-            self._attr_native_value = f"{new_value}".replace("/", " / ")
+            if new_value is None:
+                self._attr_native_value = None
+            else:
+                alarm_text = str(new_value).replace("/", " / ")
+                if len(alarm_text) > MAX_LENGTH_STATE_STATE:
+                    self._attr_native_value = (
+                        alarm_text[: MAX_LENGTH_STATE_STATE - 1] + "…"
+                    )
+                else:
+                    self._attr_native_value = alarm_text
         elif self.attribute == "alarmGroups":
             self._attr_native_value = ", ".join(
                 [g.get("groupName", "") for g in (new_value or [])]
@@ -277,6 +287,9 @@ class BlaulichtSMSEntity(BlaulichtSMSBaseEntity, SensorEntity):
             return
 
         extra_attributes = {key: alarm.get(key) for key in SENSOR_FIELDS}
+        alarm_text = alarm.get("alarmText")
+        if alarm_text is not None:
+            extra_attributes["full_text"] = f"{alarm_text}".replace("/", " / ")
         coordinates = alarm.get("coordinates") or {}
         extra_attributes["latitude"] = coordinates.get("lat")
         extra_attributes["longitude"] = coordinates.get("lon")

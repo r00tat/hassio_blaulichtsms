@@ -1,13 +1,14 @@
 """BlaulichtSMS config flow."""
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import aiohttp
 import voluptuous as vol
 
-from homeassistant import config_entries, data_entry_flow
-from homeassistant.config_entries import ConfigEntry
+from homeassistant import config_entries
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -35,19 +36,14 @@ async def _validate_credentials(
     return {}
 
 
-@config_entries.HANDLERS.register(DOMAIN)
 class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """BlaulichtSMS config flow."""
 
     VERSION = 1
 
-    def __init__(self) -> None:
-        """Initialize the flow."""
-        self._reauth_entry: ConfigEntry | None = None
-
     async def async_step_user(
         self, info: dict[str, Any] | None = None
-    ) -> data_entry_flow.FlowResult:
+    ) -> ConfigFlowResult:
         """Get initial step for Config Flow."""
         _LOGGER.debug(
             "%s step user started for customer %s",
@@ -78,51 +74,44 @@ class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_reauth(
-        self, entry_data: dict[str, Any]
-    ) -> data_entry_flow.FlowResult:
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
         """Start a reauth flow."""
-        self._reauth_entry = self.hass.config_entries.async_get_entry(
-            self.context["entry_id"]
-        )
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> data_entry_flow.FlowResult:
+    ) -> ConfigFlowResult:
         """Confirm new credentials for an existing entry."""
-        assert self._reauth_entry is not None
-
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            errors = await _validate_credentials(
-                self.hass,
-                self._reauth_entry.data[CONF_CUSTOMER_ID],
-                user_input[CONF_USERNAME],
-                user_input[CONF_PASSWORD],
-            )
-            if not errors:
-                self.hass.config_entries.async_update_entry(
-                    self._reauth_entry,
-                    data={**self._reauth_entry.data, **user_input},
-                )
-                await self.hass.config_entries.async_reload(
-                    self._reauth_entry.entry_id
-                )
-                return self.async_abort(reason="reauth_successful")
-
-        return self.async_show_form(
-            step_id="reauth_confirm",
-            data_schema=reauth_schema(self._reauth_entry.data),
-            errors=errors,
+        return await self._async_step_update_credentials(
+            self._get_reauth_entry(), "reauth_confirm", "reauth_successful", user_input
         )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
-    ) -> data_entry_flow.FlowResult:
+    ) -> ConfigFlowResult:
         """Let the user update credentials for an existing entry."""
-        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
-        assert entry is not None
+        return await self._async_step_update_credentials(
+            self._get_reconfigure_entry(),
+            "reconfigure",
+            "reconfigure_successful",
+            user_input,
+        )
 
+    async def _async_step_update_credentials(
+        self,
+        entry: config_entries.ConfigEntry,
+        step_id: str,
+        abort_reason: str,
+        user_input: dict[str, Any] | None,
+    ) -> ConfigFlowResult:
+        """Validate and store new credentials for ``entry``.
+
+        Shared by the reauth and reconfigure steps, which differ only in the
+        step id and the abort reason. Updating the entry fires the update
+        listener registered in ``async_setup_entry``, which reloads the
+        integration - so no explicit reload is issued here.
+        """
         errors: dict[str, str] = {}
         if user_input is not None:
             errors = await _validate_credentials(
@@ -133,14 +122,12 @@ class BlaulichtSMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             if not errors:
                 self.hass.config_entries.async_update_entry(
-                    entry,
-                    data={**entry.data, **user_input},
+                    entry, data={**entry.data, **user_input}
                 )
-                await self.hass.config_entries.async_reload(entry.entry_id)
-                return self.async_abort(reason="reconfigure_successful")
+                return self.async_abort(reason=abort_reason)
 
         return self.async_show_form(
-            step_id="reconfigure",
+            step_id=step_id,
             data_schema=reauth_schema(entry.data),
             errors=errors,
         )
@@ -159,7 +146,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> data_entry_flow.FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)

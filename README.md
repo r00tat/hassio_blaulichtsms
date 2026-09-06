@@ -25,6 +25,25 @@ Für die Konfiguration muss ein [Einsatzmonitor](https://start.blaulichtsms.net/
 3. Starte Homeassistant neu
 4. Füge die Blaulicht SMS Integration mit dem konfigurierten Dashboard Zugangsdaten hinzu
 
+## Dashboard Karte
+
+Für die Anzeige der Alarme im Dashboard gibt es die von der Community
+entwickelte Lovelace Karte
+[blaulichtsms-ha-alarm-card](https://github.com/TheHangMan97/blaulichtsms-ha-alarm-card)
+von [@TheHangMan97](https://github.com/TheHangMan97).
+
+Sie stellt den aktuellen Alarm übersichtlich dar: Status Badges, Alarmtext,
+Zeitpunkt, Melder, Adresse samt eingebetteter Karte, Alarmierungsgruppen sowie
+die Rückmeldungen — auch nach Funktion aufgeschlüsselt. Welche Informationen
+angezeigt werden, lässt sich im visuellen Editor einzeln ein- und ausblenden.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Plugin&owner=TheHangMan97&repository=blaulichtsms-ha-alarm-card)
+
+Die Karte ist ein eigenständiges Community Projekt und wird nicht von dieser
+Integration betreut. Fragen und Fehlerberichte dazu bitte direkt im
+[Repository der Karte](https://github.com/TheHangMan97/blaulichtsms-ha-alarm-card/issues)
+melden.
+
 ## Development
 
 Setup your environment and start a test container by running `./dev.sh`.

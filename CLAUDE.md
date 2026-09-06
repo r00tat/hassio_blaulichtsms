@@ -37,16 +37,18 @@ All non-integration tests have no network dependency and always run.
 Single-integration layout under `custom_components/blaulichtsms/`:
 
 - [blaulichtsms.py](custom_components/blaulichtsms/blaulichtsms.py) — `BlaulichtSmsController`, the async aiohttp client for the Dashboard API (login → session token → `get_alarms` / `get_last_alarm`). Has no Home Assistant dependencies; integration tests exercise it directly with credentials from env vars.
-- [coordinator.py](custom_components/blaulichtsms/coordinator.py) — `BlaulichtSMSCoordinator` wraps the controller in a `DataUpdateCoordinator` with a 30s poll. A class-level `coordinators` dict keyed by customer id keeps a single coordinator per config entry; `get_coordinator()` is the factory. `_async_update_data` calls `get_last_alarm()`, so `coordinator.data` is the latest alarm dict (or `None`).
+- [coordinator.py](custom_components/blaulichtsms/coordinator.py) — `BlaulichtSMSCoordinator` wraps the controller in a `DataUpdateCoordinator` with a 30s poll (configurable via `CONF_SCAN_INTERVAL`). `async_create()` is the factory; `__init__.py` calls it once and stores the instance in `entry.runtime_data`, which the platforms read. The config entry is passed to `DataUpdateCoordinator.__init__` as `config_entry=`. `_async_update_data` calls `get_last_alarm()` and returns `{"alarm": …, "is_active": …}`.
 - [config_flow.py](custom_components/blaulichtsms/config_flow.py) — UI-based setup and options flow; validates credentials by calling `get_last_alarm()` once before creating the entry.
 - [sensor.py](custom_components/blaulichtsms/sensor.py) — One `BlaulichtSMSEntity` per field in `SENSOR_FIELDS` (a generic entity that dispatches on `attribute` name). Fields ending in `date` are marked `SensorDeviceClass.TIMESTAMP`. Special handling exists for `alarmText`, `alarmGroups`, `recipients`, and `CONF_TRACK_RECIPIENT`. An extra `CONF_TRACK_RECIPIENT` entity is added only when that option is configured.
 - [binary_sensor.py](custom_components/blaulichtsms/binary_sensor.py) — Two binary sensors:
   - `BlaulichtSMSAlarmActiveSensor`: true while `now < alarmDate + CONF_ALARM_DURATION`.
   - `BlaulichtSMSNewAlarmActiveSensor`: edge-triggered. On a new `alarmId` it forces `False` then evaluates the target (window + optional recipient-confirmation gate), writing state twice so automations see a genuine `off → on` transition.
 - [schema.py](custom_components/blaulichtsms/schema.py) / [constants.py](custom_components/blaulichtsms/constants.py) — voluptuous schemas for user + options flow and the `DOMAIN` / `CONF_*` / `DEFAULT_*` constants.
-- [__init__.py](custom_components/blaulichtsms/__init__.py) — `async_setup_entry` forwards to `sensor` and `binary_sensor` platforms.
+- [__init__.py](custom_components/blaulichtsms/__init__.py) — `async_setup_entry` creates the coordinator, assigns `entry.runtime_data`, forwards to the `sensor` and `binary_sensor` platforms and registers the update listener that reloads the entry when data or options change. There is no `async_setup` and nothing is stored in `hass.data`.
 
-Data flow: config entry → `BlaulichtSMSCoordinator.get_coordinator` (singleton per customer id) → `BlaulichtSmsController.get_last_alarm()` every 30s → entities receive `_handle_coordinator_update` and derive their state from `coordinator.data`.
+Data flow: config entry → `BlaulichtSMSCoordinator.async_create` → `entry.runtime_data` → `BlaulichtSmsController.get_last_alarm()` every 30s → entities receive `_handle_coordinator_update` and derive their state from `coordinator.data`.
+
+The integration is config-entry only. There is no YAML platform setup (`async_setup_platform` / `PLATFORM_SCHEMA`) — do not reintroduce it.
 
 ## Conventions
 

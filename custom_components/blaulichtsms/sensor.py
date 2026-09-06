@@ -3,15 +3,13 @@
 import logging
 
 from homeassistant.components.sensor import (
-    PLATFORM_SCHEMA,
     SensorDeviceClass,
     SensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import MAX_LENGTH_STATE_STATE
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import PlatformNotReady
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .base import BlaulichtSMSBaseEntity
 from .blaulichtsms import _parse_alarm_datetime
@@ -19,10 +17,7 @@ from .constants import (
     CONF_CUSTOMER_ID,
     CONF_TRACK_RECIPIENT,
 )
-from .coordinator import BlaulichtSMSCoordinator
-from .schema import BLAULICHTSMS_SCHEMA
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(BLAULICHTSMS_SCHEMA)
+from .coordinator import BlaulichtSMSConfigEntry, BlaulichtSMSCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -156,55 +151,21 @@ TRANSLATION_KEYS = {
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,
-) -> bool:
-    """Set up a config entry."""
+    entry: BlaulichtSMSConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up the blaulichtsms sensors for a config entry."""
     _LOGGER.info("setup of blaulichtsms entry: %s", entry.data.get(CONF_CUSTOMER_ID))
-    setup_result = await setup_blaulichtsms(
-        hass, entry, async_add_entities, discovery_info
-    )
-    _LOGGER.debug("setup result %s", setup_result)
-    return setup_result
-
-
-async def async_setup_platform(
-    hass: HomeAssistant,
-    config: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,
-) -> bool:
-    """Set up platform."""
-    return await setup_blaulichtsms(hass, config, async_add_entities, discovery_info)
-
-
-async def setup_blaulichtsms(
-    hass: HomeAssistant,
-    config: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,
-) -> bool:
-    """Set up blaulichtsms sensors."""
-    coordinator = await BlaulichtSMSCoordinator.get_coordinator(hass, config)
-
-    try:
-        await coordinator.async_refresh()
-    except Exception as ex:
-        _LOGGER.exception("BlaulichtSMS failed to start")
-        raise PlatformNotReady(
-            f"Failed to connect to Blaulicht SMS {config.data.get(CONF_CUSTOMER_ID)}: {ex}"
-        ) from ex
+    coordinator = entry.runtime_data
 
     entities = [
-        BlaulichtSMSEntity(coordinator, attribute, config)
+        BlaulichtSMSEntity(coordinator, attribute, entry)
         for attribute in SENSOR_FIELDS + RECIPIENT_COUNT_FIELDS + DERIVED_FIELDS
     ]
-    if config.data.get(CONF_TRACK_RECIPIENT):
-        entities.append(BlaulichtSMSEntity(coordinator, CONF_TRACK_RECIPIENT, config))
+    if entry.data.get(CONF_TRACK_RECIPIENT):
+        entities.append(BlaulichtSMSEntity(coordinator, CONF_TRACK_RECIPIENT, entry))
 
     async_add_entities(entities)
-    return True
 
 
 class BlaulichtSMSEntity(BlaulichtSMSBaseEntity, SensorEntity):

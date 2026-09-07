@@ -11,6 +11,15 @@ Diese Homeassistant Komponente ermöglicht es Alarme und Infos von [Blaulicht SM
 
 Für die Konfiguration muss ein [Einsatzmonitor](https://start.blaulichtsms.net/de/#/alarm-dashboard/list) konfiguriert werden und dessen Zugangsdaten in der Integration konfiguriert werden.
 
+## Alarme auslösen
+
+Diese Integration ruft Alarme nur **ab**. Zum **Auslösen** von Alarmen, Infos
+und Terminen aus Automatisierungen heraus gibt es die eigene Integration
+[homeassistant-blaulichtsms-alarm](https://github.com/r00tat/homeassistant-blaulichtsms-alarm).
+Beide Integrationen können parallel installiert sein — sie verwenden
+unterschiedliche APIs und damit auch unterschiedliche Zugangsdaten (Einsatzmonitor
+hier, automatischer Alarmauslöser dort).
+
 ## Installation
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&owner=r00tat&repository=hassio_blaulichtsms)
@@ -46,7 +55,18 @@ melden.
 
 ## Development
 
-Setup your environment and start a test container by running `./dev.sh`.
+`./dev.sh` legt die venv an, synchronisiert die Komponente nach `config/` und
+startet Home Assistant im Container auf <http://localhost:8123>. Anschließend
+werden die Container-Logs mitgelesen; `Ctrl-C` stoppt die Testinstanz geordnet,
+ein erneutes `./dev.sh` startet sie wieder.
+
+Der Port lässt sich per `HTTP_PORT` überschreiben, `--recreate` legt den
+Container neu an und `--no-logs` lässt ihn im Hintergrund weiterlaufen.
+
+```bash
+uv run python -m ruff check            # Lint
+uv run python -m unittest discover -v  # Tests
+```
 
 ## License
 

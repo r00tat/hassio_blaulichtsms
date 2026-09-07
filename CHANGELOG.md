@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.1...0.5.2) (2026-09-07)
+
+
+### Documentation
+
+* Schwester-Integration erwähnen und Development beschreiben ([7c23fbe](https://github.com/r00tat/hassio_blaulichtsms/commit/7c23fbe734b18c78422cc2d88f17b14fb56b3d3e))
+
 ## [0.5.1](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.0...0.5.1) (2026-09-06)
 
 

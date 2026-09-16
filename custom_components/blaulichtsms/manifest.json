@@ -1,14 +1,15 @@
 {
   "domain": "blaulichtsms",
   "name": "BlaulichtSMS Einsatz Infos",
-  "documentation": "https://github.com/r00tat/hassio_blaulichtsms",
-  "dependencies": [],
-  "requirements": [],
-  "config_flow": true,
-  "iot_class": "cloud_polling",
-  "integration_type": "device",
   "codeowners": [
     "@r00tat"
   ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/r00tat/hassio_blaulichtsms",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/r00tat/hassio_blaulichtsms/issues",
+  "requirements": [],
   "version": "0.5.1"
 }

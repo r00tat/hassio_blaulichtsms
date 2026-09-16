@@ -1,5 +1,6 @@
 {
   "name": "BlaulichtSMS",
-  "render_readme": true,
-  "iot_class": "cloud_polling"
+  "country": ["AT", "DE", "CH"],
+  "homeassistant": "2026.9.0",
+  "render_readme": true
 }

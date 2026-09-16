@@ -2,6 +2,7 @@
   "domain": "blaulichtsms",
   "name": "BlaulichtSMS Einsatz Infos",
   "documentation": "https://github.com/r00tat/hassio_blaulichtsms",
+  "issue_tracker": "https://github.com/r00tat/hassio_blaulichtsms/issues",
   "dependencies": [],
   "requirements": [],
   "config_flow": true,

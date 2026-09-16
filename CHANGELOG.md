@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.2](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.1...0.5.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update ruff requirement from ~=0.16.6 to ~=0.16.7 in the dependencies group ([d154ecf](https://github.com/r00tat/hassio_blaulichtsms/commit/d154ecfa0bfd52fe11cb61c14e2d10c12aa0693a))
+* **deps:** update ruff requirement in the dependencies group ([600aa9b](https://github.com/r00tat/hassio_blaulichtsms/commit/600aa9b65293bf0c96149e3d76947ec2e9bf5ce5))
+* Manifest-Keys sortieren und hassfest auf Commit-SHA pinnen ([7b26fce](https://github.com/r00tat/hassio_blaulichtsms/commit/7b26fced48b09b926453146bfd61ab8931b44637))
+* von HACS- und Hassfest-Validierung gemeldete Fehler beheben ([135fa7c](https://github.com/r00tat/hassio_blaulichtsms/commit/135fa7c76874d8e3cdb3d76f5e3a86a1db069cdd))
+
+
+### Documentation
+
+* Schwester-Integration erwähnen und Development beschreiben ([7c23fbe](https://github.com/r00tat/hassio_blaulichtsms/commit/7c23fbe734b18c78422cc2d88f17b14fb56b3d3e))
+
 ## [0.5.1](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.0...0.5.1) (2026-09-06)
 
 

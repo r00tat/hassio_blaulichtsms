@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.2...0.6.0) (2026-09-17)
+
+
+### Features
+
+* neues Brand-Icon und Ablage unter custom_components/blaulichtsms/brand/ ([82dc592](https://github.com/r00tat/hassio_blaulichtsms/commit/82dc592a7a75e86fd4e907b4a6b006580983e092))
+* neues Brand-Icon und Ablage unter custom_components/blaulichtsms/brand/ ([0600b50](https://github.com/r00tat/hassio_blaulichtsms/commit/0600b5046981cc6e0ce941caaece36713dfaf2f6))
+
+
+### Miscellaneous Chores
+
+* show all commit types in changelog ([2a44c93](https://github.com/r00tat/hassio_blaulichtsms/commit/2a44c936616caee3a28317ec144a422008c96a50))
+* show all commit types in changelog ([ff217fe](https://github.com/r00tat/hassio_blaulichtsms/commit/ff217fecdb88948e5609f9afd65d42caf4e38a81))
+
 ## [0.5.2](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.1...0.5.2) (2026-09-16)
 
 

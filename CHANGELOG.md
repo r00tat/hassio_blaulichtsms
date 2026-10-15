@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.1](https://github.com/r00tat/hassio_blaulichtsms/compare/0.6.0...0.6.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **deps:** bump home-assistant/actions/hassfest ([67a71dd](https://github.com/r00tat/hassio_blaulichtsms/commit/67a71dd5437c502365f1c07f733b3ca52b70c324))
+* **deps:** bump home-assistant/actions/hassfest ([817d563](https://github.com/r00tat/hassio_blaulichtsms/commit/817d5636e364eafcafb7beb85d259ed5444b08a7))
+* **deps:** bump home-assistant/actions/hassfest from 06749dd8c0b54f350bc69c8752456cee498808a3 to 50baf3a307f87100cf550d4ae127746595030d5d in the dependencies group ([0992a15](https://github.com/r00tat/hassio_blaulichtsms/commit/0992a152cbba30777bd941a7856f77a1d1863d0a))
+* **deps:** bump home-assistant/actions/hassfest from 58bff37c8947f690ace498be413a9b78d6f30f93 to 06749dd8c0b54f350bc69c8752456cee498808a3 in the dependencies group ([ddc1984](https://github.com/r00tat/hassio_blaulichtsms/commit/ddc1984d7296d4979ff1f79ef57b0b3f3f88621a))
+* **deps:** bump the dependencies group across 1 directory with 2 updates ([9971aa8](https://github.com/r00tat/hassio_blaulichtsms/commit/9971aa837335c61b182b2227abdfcc386c624091))
+* **deps:** bump the dependencies group across 1 directory with 2 updates ([58b3e88](https://github.com/r00tat/hassio_blaulichtsms/commit/58b3e8804412877622b2f24f2f2855fc6d87259b))
+
 ## [0.6.0](https://github.com/r00tat/hassio_blaulichtsms/compare/0.5.2...0.6.0) (2026-09-17)
 
 

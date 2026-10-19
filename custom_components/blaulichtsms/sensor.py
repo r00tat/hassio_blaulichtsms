@@ -257,10 +257,11 @@ class BlaulichtSMSEntity(BlaulichtSMSBaseEntity, SensorEntity):
                 else:
                     self._attr_native_value = alarm_text
         elif self.attribute == "alarmGroups":
+            groups = new_value or []
             self._attr_native_value = ", ".join(
-                [g.get("groupName", "") for g in (new_value or [])]
+                [g.get("groupName", "") for g in groups]
             )
-            self._attr_extra_state_attributes = new_value
+            self._attr_extra_state_attributes = {"groups": groups}
         elif self.attribute == CONF_TRACK_RECIPIENT:
             recipient_number: str = self._config.data.get(CONF_TRACK_RECIPIENT)
             recipients: list[dict] = alarm.get("recipients") or []

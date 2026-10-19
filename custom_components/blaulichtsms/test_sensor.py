@@ -144,6 +144,26 @@ class TestSensorEntity(unittest.TestCase):
         self.assertEqual(sensor._attr_native_value, 0)
         self.assertEqual(sensor._attr_extra_state_attributes["functions"], [])
 
+    def test_alarm_groups_attributes_are_a_dict(self):
+        """Alarm groups are exposed under a 'groups' key, not as a raw list."""
+        sensor, coordinator = self._make_sensor("alarmGroups")
+        groups = [
+            {"groupId": "g1", "groupName": "Zug 1"},
+            {"groupId": "g2", "groupName": "Zug 2", "extra": True},
+        ]
+        coordinator.data = wrap({"alarmGroups": groups})
+        sensor._handle_coordinator_update()
+        self.assertEqual(sensor._attr_native_value, "Zug 1, Zug 2")
+        self.assertEqual(sensor._attr_extra_state_attributes, {"groups": groups})
+
+    def test_alarm_groups_missing(self):
+        """Missing alarm groups yield an empty state and an empty group list."""
+        sensor, coordinator = self._make_sensor("alarmGroups")
+        coordinator.data = wrap({"alarmGroups": None})
+        sensor._handle_coordinator_update()
+        self.assertEqual(sensor._attr_native_value, "")
+        self.assertEqual(sensor._attr_extra_state_attributes, {"groups": []})
+
     def test_address_sensor(self):
         """Address sensor returns geolocation.address or None."""
         sensor, coordinator = self._make_sensor("address")

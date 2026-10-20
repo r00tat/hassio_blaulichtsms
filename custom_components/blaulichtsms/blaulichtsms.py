@@ -60,14 +60,25 @@ class BlaulichtSmsController:
             return await self._handle_response(resp)
 
     async def _handle_response(self, resp: aiohttp.ClientResponse) -> dict:
-        """Raise on auth failure, otherwise return JSON body."""
+        """Raise on auth failure, otherwise return JSON body.
+
+        The session token is part of the request URL, and aiohttp puts that URL
+        into ClientResponseError messages. Re-raise those as a plain ClientError
+        carrying only the status code, without chaining, so the token never
+        reaches the log.
+        """
         if resp.status in (401, 403):
             self._session_token = None
             raise BlaulichtSmsAuthenticationError(
                 f"authentication rejected with status {resp.status}"
             )
-        resp.raise_for_status()
-        return await resp.json()
+        try:
+            resp.raise_for_status()
+            return await resp.json()
+        except aiohttp.ClientResponseError as err:
+            raise aiohttp.ClientError(
+                f"blaulichtSMS API request failed with status {err.status}"
+            ) from None
 
     async def get_session(self) -> str:
         """Request a new session token from the blaulichtSMS Dashboard API."""

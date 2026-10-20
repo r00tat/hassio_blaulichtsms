@@ -24,6 +24,7 @@ Tests are split by module:
 
 - `test_blaulichtsms.py` — `TestBlaulichtsms` integration tests that hit the live API; skipped when `SKIP_INTEGRATION_TEST=true` (CI sets this).
 - `test_binary_sensor.py` — unit tests for the binary sensors (`TestNewAlarmActiveSensor`, `TestAlarmActiveSensor`, `TestNeedsAcknowledgementSensor`).
+- `test_controller.py` — `TestHandleResponse` for `BlaulichtSmsController._handle_response` (status handling, no session token in error messages).
 - `test_coordinator.py` — `TestCoordinatorIsAlarmActive` for `BlaulichtSMSCoordinator._is_alarm_active`.
 - `test_sensor.py` — `TestSensorEntity` and `TestAlarmHelpers` for the generic entity and pure helpers.
 - `_test_fixtures.py` — shared `make_alarm` / `wrap` helpers (not a test module; does not match unittest discovery).

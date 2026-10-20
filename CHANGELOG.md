@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2](https://github.com/r00tat/hassio_blaulichtsms/compare/0.6.1...0.6.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* **api:** keep session token out of HTTP error messages ([1d0058f](https://github.com/r00tat/hassio_blaulichtsms/commit/1d0058fdf0d1efbc1464215265a5cca01b6da60b))
+* **api:** keep session token out of HTTP error messages ([3b89cca](https://github.com/r00tat/hassio_blaulichtsms/commit/3b89ccac7d8e3e62542a84d40143664d0b93d284))
+
 ## [0.6.1](https://github.com/r00tat/hassio_blaulichtsms/compare/0.6.0...0.6.1) (2026-10-19)
 
 

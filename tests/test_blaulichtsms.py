@@ -12,7 +12,7 @@ import unittest
 from collections.abc import Coroutine
 from typing import Any
 
-from .blaulichtsms import BlaulichtSmsController
+from custom_components.blaulichtsms.blaulichtsms import BlaulichtSmsController
 
 log = logging.getLogger("TestBlaulichtSMS")
 

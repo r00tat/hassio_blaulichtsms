@@ -11,7 +11,7 @@ class TestSensorEntity(unittest.TestCase):
 
     def _make_sensor(self, attribute, config_data=None):
         """Construct a BlaulichtSMSEntity with a stubbed coordinator."""
-        from .sensor import BlaulichtSMSEntity
+        from custom_components.blaulichtsms.sensor import BlaulichtSMSEntity
 
         coordinator = MagicMock()
         coordinator.data = None
@@ -185,7 +185,7 @@ class TestSensorIconsAndNames(unittest.TestCase):
     """Verify icons, German display names and stable entity_id slug."""
 
     def _make_sensor(self, attribute, config_data=None):
-        from .sensor import BlaulichtSMSEntity
+        from custom_components.blaulichtsms.sensor import BlaulichtSMSEntity
 
         coordinator = MagicMock()
         coordinator.data = None
@@ -197,8 +197,8 @@ class TestSensorIconsAndNames(unittest.TestCase):
 
     def test_every_configured_attribute_has_icon_and_translation_key(self):
         """SENSOR_ICONS and TRANSLATION_KEYS cover every exposed attribute."""
-        from .constants import CONF_TRACK_RECIPIENT
-        from .sensor import (
+        from custom_components.blaulichtsms.constants import CONF_TRACK_RECIPIENT
+        from custom_components.blaulichtsms.sensor import (
             DERIVED_FIELDS,
             RECIPIENT_COUNT_FIELDS,
             SENSOR_FIELDS,
@@ -214,7 +214,7 @@ class TestSensorIconsAndNames(unittest.TestCase):
 
     def test_icon_assigned_from_mapping(self):
         """Constructor assigns _attr_icon from SENSOR_ICONS."""
-        from .sensor import SENSOR_ICONS
+        from custom_components.blaulichtsms.sensor import SENSOR_ICONS
 
         for attribute, icon in SENSOR_ICONS.items():
             sensor = self._make_sensor(
@@ -237,7 +237,7 @@ class TestSensorIconsAndNames(unittest.TestCase):
 
     def test_translation_key_for_tracked_recipient(self):
         """track_recipient maps to its translation key."""
-        from .constants import CONF_TRACK_RECIPIENT
+        from custom_components.blaulichtsms.constants import CONF_TRACK_RECIPIENT
 
         sensor = self._make_sensor(
             CONF_TRACK_RECIPIENT, config_data={CONF_TRACK_RECIPIENT: "+4399"}
@@ -283,7 +283,7 @@ class TestAlarmHelpers(unittest.TestCase):
 
     def test_count_by_participation_empty(self):
         """Empty list yields zeroed counts."""
-        from .sensor import count_by_participation
+        from custom_components.blaulichtsms.sensor import count_by_participation
 
         self.assertEqual(
             count_by_participation([]),
@@ -292,7 +292,7 @@ class TestAlarmHelpers(unittest.TestCase):
 
     def test_count_by_participation_mixed(self):
         """Mixed statuses are aggregated, unknown counted only in total."""
-        from .sensor import count_by_participation
+        from custom_components.blaulichtsms.sensor import count_by_participation
 
         recipients = [
             {"participation": "yes"},
@@ -308,7 +308,7 @@ class TestAlarmHelpers(unittest.TestCase):
 
     def test_count_by_participation_none_is_empty(self):
         """None input is treated like an empty list."""
-        from .sensor import count_by_participation
+        from custom_components.blaulichtsms.sensor import count_by_participation
 
         self.assertEqual(
             count_by_participation(None),
@@ -317,13 +317,13 @@ class TestAlarmHelpers(unittest.TestCase):
 
     def test_confirmed_by_function_empty(self):
         """Empty recipients list yields an empty result."""
-        from .sensor import confirmed_by_function
+        from custom_components.blaulichtsms.sensor import confirmed_by_function
 
         self.assertEqual(confirmed_by_function([]), [])
 
     def test_confirmed_by_function_includes_unconfirmed(self):
         """Functions present on any recipient are included, even with yes=0."""
-        from .sensor import confirmed_by_function
+        from custom_components.blaulichtsms.sensor import confirmed_by_function
 
         recipients = [
             {
@@ -350,7 +350,7 @@ class TestAlarmHelpers(unittest.TestCase):
 
     def test_confirmed_by_function_aggregates_and_sorts(self):
         """Array is sorted by order and accumulates yes/no/pending/total."""
-        from .sensor import confirmed_by_function
+        from custom_components.blaulichtsms.sensor import confirmed_by_function
 
         f_ats = {
             "functionId": "F1",
@@ -402,7 +402,7 @@ class TestAlarmHelpers(unittest.TestCase):
 
     def test_confirmed_by_function_omits_never_seen(self):
         """Functions that never appear on any recipient are not in the result."""
-        from .sensor import confirmed_by_function
+        from custom_components.blaulichtsms.sensor import confirmed_by_function
 
         self.assertEqual(
             confirmed_by_function([{"participation": "yes", "functions": []}]), []
@@ -410,14 +410,14 @@ class TestAlarmHelpers(unittest.TestCase):
 
     def test_get_address_present(self):
         """Address is returned when present under geolocation."""
-        from .sensor import get_address
+        from custom_components.blaulichtsms.sensor import get_address
 
         alarm = {"geolocation": {"address": "Hauptplatz 1, 7100 Neusiedl"}}
         self.assertEqual(get_address(alarm), "Hauptplatz 1, 7100 Neusiedl")
 
     def test_get_address_none(self):
         """Missing geolocation or address yields None."""
-        from .sensor import get_address
+        from custom_components.blaulichtsms.sensor import get_address
 
         self.assertIsNone(get_address({"geolocation": {"address": None}}))
         self.assertIsNone(get_address({"geolocation": {}}))

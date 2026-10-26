@@ -11,7 +11,7 @@ class TestNewAlarmActiveSensor(unittest.TestCase):
 
     def _make_sensor(self, track_recipient=None, new_alarm_duration=300):
         """Construct a sensor with a stubbed coordinator."""
-        from .binary_sensor import BlaulichtSMSNewAlarmActiveSensor
+        from custom_components.blaulichtsms.binary_sensor import BlaulichtSMSNewAlarmActiveSensor
 
         coordinator = MagicMock()
         coordinator.data = None
@@ -170,7 +170,7 @@ class TestAlarmActiveSensor(unittest.TestCase):
 
     def _make_sensor(self):
         """Construct an AlarmActive sensor with a stubbed coordinator."""
-        from .binary_sensor import BlaulichtSMSAlarmActiveSensor
+        from custom_components.blaulichtsms.binary_sensor import BlaulichtSMSAlarmActiveSensor
 
         coordinator = MagicMock()
         coordinator.data = None
@@ -207,7 +207,7 @@ class TestNeedsAcknowledgementSensor(unittest.TestCase):
 
     def _make_sensor(self):
         """Construct the sensor with a stubbed coordinator."""
-        from .binary_sensor import BlaulichtSMSNeedsAcknowledgementSensor
+        from custom_components.blaulichtsms.binary_sensor import BlaulichtSMSNeedsAcknowledgementSensor
 
         coordinator = MagicMock()
         coordinator.data = None
@@ -271,28 +271,28 @@ class TestBinarySensorIcons(unittest.TestCase):
 
     def test_alarm_active_sensor_icon(self):
         """AlarmActive uses an alarm-light icon."""
-        from .binary_sensor import BlaulichtSMSAlarmActiveSensor
+        from custom_components.blaulichtsms.binary_sensor import BlaulichtSMSAlarmActiveSensor
 
         sensor = BlaulichtSMSAlarmActiveSensor(self._coordinator())
         self.assertEqual(sensor._attr_icon, "mdi:alarm-light")
 
     def test_needs_acknowledgement_icon(self):
         """NeedsAcknowledgement uses a bell-alert outline icon."""
-        from .binary_sensor import BlaulichtSMSNeedsAcknowledgementSensor
+        from custom_components.blaulichtsms.binary_sensor import BlaulichtSMSNeedsAcknowledgementSensor
 
         sensor = BlaulichtSMSNeedsAcknowledgementSensor(self._coordinator())
         self.assertEqual(sensor._attr_icon, "mdi:bell-alert-outline")
 
     def test_new_alarm_active_icon(self):
         """NewAlarmActive uses a bell-alert icon."""
-        from .binary_sensor import BlaulichtSMSNewAlarmActiveSensor
+        from custom_components.blaulichtsms.binary_sensor import BlaulichtSMSNewAlarmActiveSensor
 
         sensor = BlaulichtSMSNewAlarmActiveSensor(self._coordinator(), 300, None)
         self.assertEqual(sensor._attr_icon, "mdi:bell-alert")
 
     def test_translation_keys(self):
         """Binary sensors expose translation keys and enable has_entity_name."""
-        from .binary_sensor import (
+        from custom_components.blaulichtsms.binary_sensor import (
             BlaulichtSMSAlarmActiveSensor,
             BlaulichtSMSNeedsAcknowledgementSensor,
             BlaulichtSMSNewAlarmActiveSensor,
@@ -312,7 +312,7 @@ class TestBinarySensorIcons(unittest.TestCase):
 
     def test_suggested_object_id_preserves_old_slug(self):
         """suggested_object_id matches the pre-rename entity_id for new installs."""
-        from .binary_sensor import (
+        from custom_components.blaulichtsms.binary_sensor import (
             BlaulichtSMSAlarmActiveSensor,
             BlaulichtSMSNeedsAcknowledgementSensor,
             BlaulichtSMSNewAlarmActiveSensor,
@@ -337,7 +337,7 @@ class TestBinarySensorIcons(unittest.TestCase):
 
     def test_unique_id_preserved(self):
         """unique_id keeps the stable blsms-{customer_id}-{key} format."""
-        from .binary_sensor import (
+        from custom_components.blaulichtsms.binary_sensor import (
             BlaulichtSMSAlarmActiveSensor,
             BlaulichtSMSNeedsAcknowledgementSensor,
             BlaulichtSMSNewAlarmActiveSensor,

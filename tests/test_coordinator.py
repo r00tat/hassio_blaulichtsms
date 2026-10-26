@@ -12,7 +12,7 @@ class TestCoordinatorIsAlarmActive(unittest.TestCase):
 
     def _make_coordinator(self, alarm_duration_seconds=3600):
         """Construct a coordinator with a stubbed api for _is_alarm_active tests."""
-        from .coordinator import BlaulichtSMSCoordinator
+        from custom_components.blaulichtsms.coordinator import BlaulichtSMSCoordinator
 
         coordinator = BlaulichtSMSCoordinator.__new__(BlaulichtSMSCoordinator)
         coordinator.api = MagicMock()

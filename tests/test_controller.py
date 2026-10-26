@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 import aiohttp
 from yarl import URL
 
-from .blaulichtsms import BlaulichtSmsAuthenticationError, BlaulichtSmsController
+from custom_components.blaulichtsms.blaulichtsms import BlaulichtSmsAuthenticationError, BlaulichtSmsController
 
 _TOKEN = "secret-session-token"
 _URL = URL(f"https://api.example.invalid/dashboard/{_TOKEN}")

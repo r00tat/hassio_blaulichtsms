@@ -15,12 +15,12 @@ Run python entry points via `uv run` — do not activate the venv manually. Exam
 ```bash
 uv run python -m ruff check                         # lint
 uv run python -m unittest discover -v               # run all tests (from repo root)
-uv run python -m unittest discover -s custom_components/blaulichtsms -t . -v  # same, with explicit start dir — -t must point at the repo root so the package resolves
-uv run python -m unittest custom_components.blaulichtsms.test_binary_sensor.TestNewAlarmActiveSensor -v
-uv run python -m unittest custom_components.blaulichtsms.test_binary_sensor.TestNewAlarmActiveSensor.test_new_alarm_forces_false_then_true
+uv run python -m unittest discover -s tests -t . -v  # same, with explicit start dir — -t must point at the repo root so the packages resolve
+uv run python -m unittest tests.test_binary_sensor.TestNewAlarmActiveSensor -v
+uv run python -m unittest tests.test_binary_sensor.TestNewAlarmActiveSensor.test_new_alarm_forces_false_then_true
 ```
 
-Tests are split by module:
+Tests live in the top-level [tests/](tests/) package (not inside `custom_components/blaulichtsms/`, so they are not shipped to users via HACS) and are split by module:
 
 - `test_blaulichtsms.py` — `TestBlaulichtsms` integration tests that hit the live API; skipped when `SKIP_INTEGRATION_TEST=true` (CI sets this).
 - `test_binary_sensor.py` — unit tests for the binary sensors (`TestNewAlarmActiveSensor`, `TestAlarmActiveSensor`, `TestNeedsAcknowledgementSensor`).
@@ -56,7 +56,7 @@ The integration is config-entry only. There is no YAML platform setup (`async_se
 - Ruff config is in [.ruff.toml](.ruff.toml) (target `py310`, line length 88, Home Assistant rule set). Run ruff and fix warnings before committing.
 - Version source of truth is [manifest.json](custom_components/blaulichtsms/manifest.json) `version`. `VERSION` in [constants.py](custom_components/blaulichtsms/constants.py) is read from it at import time — do not duplicate the value.
 - User-facing strings are in [strings.json](custom_components/blaulichtsms/strings.json) plus German/English translations in [translations/](custom_components/blaulichtsms/translations/). New `CONF_*` options require entries in all three.
-- The integration is loaded as a package (`custom_components.blaulichtsms.…`) so tests and imports use the full dotted path. Avoid relative scripts outside that package.
+- The integration is loaded as a package (`custom_components.blaulichtsms.…`) so tests import it via the full dotted path (`from custom_components.blaulichtsms.sensor import …`). Avoid relative scripts outside that package.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `build:`, `style:`, `perf:`, `revert:`, optional scope like `feat(blaulichtsms):`). Dependabot is configured to emit `fix(deps): …` so dependency updates trigger patch releases.
 
 ## Release Process

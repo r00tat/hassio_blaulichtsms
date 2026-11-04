@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.3](https://github.com/r00tat/hassio_blaulichtsms/compare/0.6.2...0.6.3) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** bump the dependencies group across 1 directory with 2 updates ([8654a8d](https://github.com/r00tat/hassio_blaulichtsms/commit/8654a8d7e82b4b6379edb708f4bc5f2de004eb03))
+* **deps:** bump the dependencies group across 1 directory with 2 updates ([a6dcf8e](https://github.com/r00tat/hassio_blaulichtsms/commit/a6dcf8e9dcd865b2d70f309b1513fa8d6958bf38))
+* **deps:** bump the dependencies group with 3 updates ([af8bd93](https://github.com/r00tat/hassio_blaulichtsms/commit/af8bd9353c96542c82030471acc90b2bb6586a23))
+* **deps:** bump the dependencies group with 3 updates ([67404aa](https://github.com/r00tat/hassio_blaulichtsms/commit/67404aa96eec95a6bec2deff2fa46098b9dbb987))
+* **deps:** update ruff requirement ([edd0a33](https://github.com/r00tat/hassio_blaulichtsms/commit/edd0a3303c0ee855f774b6fa51a83045382f7fa7))
+* **deps:** update ruff requirement from ~=0.17.1 to ~=0.17.2 in the dependencies group ([e113971](https://github.com/r00tat/hassio_blaulichtsms/commit/e113971115432b4d16742332ceafb54465712e16))
+
+
+### Tests
+
+* move tests out of the integration package into tests/ ([5926f27](https://github.com/r00tat/hassio_blaulichtsms/commit/5926f2792b08f5eceba927270b0c4081484b2c4f))
+* move tests out of the integration package into tests/ ([3a71077](https://github.com/r00tat/hassio_blaulichtsms/commit/3a710770c1fad4d8b7627c2e4c2eb00925578ad9))
+
 ## [0.6.2](https://github.com/r00tat/hassio_blaulichtsms/compare/0.6.1...0.6.2) (2026-10-20)
 
 

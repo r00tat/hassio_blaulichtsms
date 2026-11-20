@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.4](https://github.com/r00tat/hassio_blaulichtsms/compare/0.6.3...0.6.4) (2026-11-20)
+
+
+### Bug Fixes
+
+* **deps:** bump the dependencies group with 2 updates ([d2bb610](https://github.com/r00tat/hassio_blaulichtsms/commit/d2bb610ffd3176232a65bf5993d0b5aab4e218a7))
+* **deps:** bump the dependencies group with 2 updates ([ec38fab](https://github.com/r00tat/hassio_blaulichtsms/commit/ec38fabb5799621f78eb929b63b68b640548e3e3))
+* **deps:** bump the dependencies group with 2 updates ([7e63d52](https://github.com/r00tat/hassio_blaulichtsms/commit/7e63d52a639332fbd897e1b88acf46ebf0327c9d))
+* **deps:** bump the dependencies group with 2 updates ([a89333e](https://github.com/r00tat/hassio_blaulichtsms/commit/a89333e2a91fbde119ce58260dedb4f56529460b))
+
+
+### Documentation
+
+* HACS default repository in README ([955fb7d](https://github.com/r00tat/hassio_blaulichtsms/commit/955fb7d3a234b8d6bf7259943c5dea22cdae5b07))
+* HACS default repository in README ([6bfde94](https://github.com/r00tat/hassio_blaulichtsms/commit/6bfde94c6b6366b48cabaa96272f4ce3ea9da641))
+
 ## [0.6.3](https://github.com/r00tat/hassio_blaulichtsms/compare/0.6.2...0.6.3) (2026-11-04)
 
 

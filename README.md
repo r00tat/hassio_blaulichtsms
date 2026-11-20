@@ -3,6 +3,7 @@
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE)
+[![HACS Default][hacs-shield]][hacs]
 
 ![Project Maintenance][maintenance-shield]
 [![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
@@ -22,17 +23,22 @@ hier, automatischer Alarmauslöser dort).
 
 ## Installation
 
+Die Integration ist im Standard-Katalog von [HACS](https://hacs.xyz/) — dem
+Home Assistant Marketplace — enthalten. Ein benutzerdefiniertes Repository muss
+nicht mehr hinzugefügt werden.
+
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&owner=r00tat&repository=hassio_blaulichtsms)
 
-1. Füge das HACS Repository hinzu
-   1. Falls der Open HACS Repository button nicht funktioniert, kann das Repository manuell hinzugefügt werden:
-   2. HACS öffnen
-   3. Integrationen öffnen
-   4. 3 Punkte und dann "Benutzerdefinierte Repositories" öffnen
-   5. `https://github.com/r00tat/hassio_blaulichtsms` als Repository und Kategorie `Integration` auswählen
-2. Installiere die Blaulicht SMS Integration
-3. Starte Homeassistant neu
-4. Füge die Blaulicht SMS Integration mit dem konfigurierten Dashboard Zugangsdaten hinzu
+1. Öffne HACS (Marketplace) in Home Assistant und suche nach **BlaulichtSMS**
+   (oder nutze den Button oben)
+2. Installiere die BlaulichtSMS Integration
+3. Starte Home Assistant neu
+4. Füge die BlaulichtSMS Integration unter *Einstellungen → Geräte & Dienste →
+   Integration hinzufügen* mit den Zugangsdaten des Einsatzmonitors hinzu
+
+Wer die Integration bisher als benutzerdefiniertes Repository eingebunden hat,
+kann den Eintrag unter *HACS → ⋮ → Benutzerdefinierte Repositories* entfernen.
+Die installierte Integration und ihre Konfiguration bleiben dabei erhalten.
 
 ## Dashboard Karte
 
@@ -84,6 +90,8 @@ The software is licensed under [Apache License 2.0](/LICENSE).
 [exampleimg]: example.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/
+[hacs-shield]: https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge
+[hacs]: https://hacs.xyz/
 [license-shield]: https://img.shields.io/github/license/r00tat/hassio_blaulichtsms.svg?style=for-the-badge
 [maintenance-shield]: https://img.shields.io/badge/maintainer-%40r00tat-blue.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/r00tat/hassio_blaulichtsms.svg?style=for-the-badge

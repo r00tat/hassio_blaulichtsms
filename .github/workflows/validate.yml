@@ -31,4 +31,4 @@ jobs:
         uses: "actions/checkout@v7.0.1"
 
       - name: "Hassfest validation"
-        uses: "home-assistant/actions/hassfest@86d4564712fa02543c808e3a693dd04f9d3f8361" # master, der Tag 1.0.0 ist ein defekter Altstand
+        uses: "home-assistant/actions/hassfest@9e9565e68f5a70d874202871f4c4064d23814235" # master, der Tag 1.0.0 ist ein defekter Altstand
